@@ -6,8 +6,9 @@
     <meta name="viewport" content="width=device-width, user-scalable=yes, initial-scale=1, maximum-scale=1">
     <title>OpenCV NodeJS Demo</title>
 </head>
-
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+
 <script async src="opencv.js" onload="onOpenCvReady();" type="text/javascript"></script>
 <script>
     function onOpenCvReady() {
@@ -17,7 +18,8 @@
 
 <body>
     <div>
-        <div class="control"><button id="startAndStop" onclick=cameraTrigger()>Start</button></div>
+        <select id="cameraList"></select>
+        <div class="control"><button id="startAndStop" onclick=cameraTrigger()>啟動Camera</button></div>
 
         <!-- <div bgcolor="yellow" id="videoArea">
             <video id="videoInput" width=320 height=240></video>
@@ -27,31 +29,31 @@
             <div class="caption">canvasOutput</div>
             <canvas id="videoOutput"></canvas>
         </div> -->
-        <table cellpadding="10" cellspacing="10" border=2>
-
+        <table cellpadding="10" cellspacing="10" >
             <tbody>
                 <tr>
                     <td>
-                        <video id="videoInput" width=320 height=240></video>
+                        
+                        <video id="videoInput" width="320" height="240"></video>
                     </td>
                     <td>
-                        <canvas id="videoOutput"></canvas>
+                        <canvas id="videoOutput" width="320" height="240"></canvas>
                     </td>
                 </tr>
                 <tr>
                     <td>
-                        <div>videoInput</div>
+                        <div>原始輸入畫面</div>
                     </td>
                     <td>
-                        <div>canvasOutput</div>
+                        <div>OpenCV處理過的畫面</div>
                     </td>
                 </tr>
             </tbody>
         </table>
 
-        <p id="cameraFPS">cameraFPS：</p>
+        <p id="">Camera FPS：<span id="cameraFPS"></span></p>
 
-        <p id="detectLineFPS">detectLineFPS：</p>
+        <p id="">完成處理 FPS：<span id="detectLineFPS"></span></p>
 
 
         
@@ -82,6 +84,30 @@
 </body>
 
 <script type="text/javascript">
+
+$(document).ready(function() {
+    // alert('載入完成');
+    // if(navigator.mediaDevices != undefined) {
+    //     if(navigator.mediaDevices.enumerateDevices != undefined) {
+
+    //         navigator.mediaDevices.enumerateDevices()
+    //         .then(function(devices) {
+    //         devices.forEach(function(device) {
+    //             console.log(device);
+    //             alert(device.kind + ": " + device.label +
+    //                         " id = " + device.deviceId);
+    //         });
+    //         })
+    //         .catch(function(err) {
+    //             alert(err.name + ": " + err.message);
+    //         });
+
+    //     }
+
+
+    // }
+
+});
 
     var isDetectCameraFPS = false;
     var cameraFPS = 0;
@@ -192,7 +218,7 @@
 
     function detectFPS_function() {
         console.log("Camera FPS: ", cameraFPS); 
-        document.getElementById('cameraFPS').innerHTML="cameraFPS:"+cameraFPS;
+        document.getElementById('cameraFPS').innerHTML= cameraFPS;
 
         if (isDetectCameraFPS) {
             cameraFPS = 0;
@@ -215,7 +241,7 @@
 
 
             //{ video: true, audio: false }
-            navigator.mediaDevices.getUserMedia({ video: { width: { exact: 320 }, height: { exact: 240 } } }).then(function (stream) {
+            navigator.mediaDevices.getUserMedia({ video: {  width: { exact: 640 }, height: { exact: 480 } } }).then(function (stream) {
                 isCameraOpen = true;
 
                 let tracks = stream.getVideoTracks();
@@ -229,7 +255,7 @@
 
                 video.play();
                 callBack();
-                startAndStop.innerText = 'Stop';
+                startAndStop.innerText = '關閉攝像頭';
 
             }).catch(function (err) {
                 console.log("An error occurred! " + err);
@@ -249,8 +275,8 @@
         isinital = false;
         startAndStop.innerText = 'Start';
 
-        document.getElementById('detectLineFPS').innerHTML="detectLineFPS:";
-        document.getElementById('cameraFPS').innerHTML="cameraFPS:";
+        // document.getElementById('detectLineFPS').innerHTML="detectLineFPS:";
+        // document.getElementById('cameraFPS').innerHTML="cameraFPS:";
 
     }
 
@@ -528,7 +554,7 @@
         let detectFps = 1000 / (endTime - startTime);
 
         // console.log("detectFps:", detectFps);
-        document.getElementById('detectLineFPS').innerHTML="detectLineFPS:"+detectFps;
+        document.getElementById('detectLineFPS').innerHTML= detectFps.toFixed(2);
 
 
         try {
