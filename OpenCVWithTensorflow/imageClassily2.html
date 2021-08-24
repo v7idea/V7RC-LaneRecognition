@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=yes, initial-scale=1, maximum-scale=1">
+    <title>Tensorflow ImageClassily2</title>
+</head>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
+<script async src="https://cdn.jsdelivr.net/npm/@tensorflow-models/tasks" onload="onTensorflowTasksReady();"
+    type="text/javascript"></script>
+
+<script>
+
+    var predictResult = null;
+    var tensorflowModel = null;
+    var predictLock = false;
+    var isRunningPredict = false;
+    let isCameraOpen = false;
+    var userStates = 1;
+
+    async function onTensorflowTasksReady() {
+        tfTask.ImageClassification.CustomModel.TFLite.load({
+            model: './model/mobilenet_v1_0_25_128_quantized_1_metadata_1.tflite',
+            maxResults: 1
+        }).then(model => {
+            tensorflowModel = model;
+            console.log("TensorflowTasksReady");
+        });
+    }
+
+    function openDeviceCamera(callBack) {
+        if (isCameraOpen == false) {
+
+            isCameraOpen = true;
+
+            //{ video: true, audio: false }
+            navigator.mediaDevices.getUserMedia({ video: { width: { exact: 320 }, height: { exact: 240 } } }).then(function (stream) {
+
+                let tracks = stream.getVideoTracks();
+                console.log('Using stream device: ' + stream);
+                console.log('Using tracks device: ' + tracks);
+
+                video.srcObject = stream;
+
+                video.play();
+
+                if (callBack != null) {
+                    callBack();
+                }
+
+                startAndStop.innerText = 'Stop';
+            }).catch(function (err) {
+                console.log("An error occurred! " + err);
+                alert(err);
+            });
+        }
+    }
+
+    function closeDeviceCamera() {
+        if (video) {
+            video.pause();
+            video.srcObject.getVideoTracks()[0].stop();
+            video.srcObject = null;
+        }
+        startAndStop.innerText = 'Start';
+
+        isCameraOpen = false;
+        isinital = false;
+        startAndStop.innerText = 'Start';
+    }
+
+    var source = document.createElement('source');
+
+    function cameraTrigger() {
+
+        if (isCameraOpen) {
+            closeDeviceCamera();
+            isStartPredict();
+        } else {
+            openDeviceCamera(null);
+        }
+    }
+
+    function isStartPredict() {
+        if (!isRunningPredict) {
+            isRunningPredict = true;
+
+            setTimeout(runningPredict);
+        } else {
+            isRunningPredict = false;
+        }
+    }
+
+    function runningPredict() {
+        if (isRunningPredict) {
+
+            if (!predictLock) {
+
+                predictLock = true;
+
+                let startTime = Date.now();
+
+                predict().then(result => {
+                    let endTime = Date.now();
+
+                    let cost = endTime - startTime;
+                    let predictFPS = 1000 / cost;
+
+                    predictResult = result;
+
+                    if (result != null) {
+                        displayResult.textContent = `${result.classes[0].className} (${result.classes[0].score.toFixed(2)}). Inference took ${cost} ms.`;
+                    }
+
+                    let delay = 1000 / 30 - (endTime - startTime);
+
+                    if (delay < 0) {
+                        delay = 0;
+                    }
+
+                    predictLock = false;
+
+                    console.log("tensorflow   cost: " + cost);
+                    console.log("tensorflow result: ", result);
+
+                    setTimeout(runningPredict, delay);
+                }).catch(error => {
+                    console.log("predictError: ", error)
+                });
+            }
+        }
+    }
+
+    async function predict() {
+        if (tensorflowModel != null) {
+
+            if (userStates == 1) {
+                //userCameraContainer
+                result = tensorflowModel.predict(video);
+
+            } else if (userStates == 2) {
+                //ImgContainer
+                result = tensorflowModel.predict(img);
+            }
+
+            return result;
+        }
+    }
+
+</script>
+
+<body>
+    <div>
+        <div id="ImgContainer">
+            Url:
+            <input type="text" id="input_Img_Url" value="http://192.168.0.166:8080/?action=stream">
+
+            <button id="startAndStop_img" onclick="ImageTrigger()">Start</button>
+        </div>
+
+        <div id="CameraContainer" style="margin-top: 20px;">
+            Camera:
+            <button id="startAndStop" onclick="cameraTrigger()">Start</button>
+        </div>
+
+        <div style="display: table; margin-bottom: 10px;">
+            <div style="float: left; width: 320px; height: 240px; margin: 10px; border: 5px solid #555;">
+                <video id="videoInput" width=320 height=240 onloadeddata="isStartPredict();"></video>
+                <canvas id="direct" width=320 height=240></canvas>
+            </div>
+        </div>
+
+        <div id="displayResult"></div>
+
+    </div>
+
+    <script>
+        //相機用的參數
+        var video = document.getElementById('videoInput');
+        var canvasOutput = document.getElementById('videoOutput');
+        // var canvasContext = canvasOutput.getContext('2d');
+        var startAndStop = document.getElementById('startAndStop');
+        var displayResult = document.getElementById('displayResult');
+
+    </script>
+</body>
+
+</html>

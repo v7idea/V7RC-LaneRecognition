@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+
+<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=yes, initial-scale=1, maximum-scale=1">
+    <title>Tensorflow ImageClassily</title>
+
+</head>
+
+<script type="text/javascript">
+
+    var model = null;
+    var webcam = null;
+    var maxPredictions = null;
+    var labelContainer = null;
+
+    async function loadModel() {
+        const modelURL = "./model/model.json";
+        const metadataURL = "./model/metadata.json";
+
+        tmImage.load(modelURL, metadataURL).then(result => {
+            model = result;
+
+            console.log("load model success !!");
+
+            maxPredictions = model.getTotalClasses();
+
+            console.log("maxPredictions: " + maxPredictions);
+
+            labelContainer = document.getElementById("label-container");
+
+            for (let i = 0; i < maxPredictions; i++) { // and class labels
+                labelContainer.appendChild(document.createElement("div"));
+            }
+        });
+    }
+
+    var isStartPlaye = false;
+
+    async function trigger() {
+
+        if (isStartPlaye) {
+            isStartPlaye = false;
+
+            window.cancelAnimationFrame(loop);
+            webcam.stop();
+            document.getElementById("webcam-container").removeChild(webcam.canvas);
+
+            webcam = null;
+
+        } else {
+            isStartPlaye = true;
+
+            webcam = new tmImage.Webcam(320, 240, true);
+            webcam.setup().then(noResult => {
+
+                if (webcam.canvas.parentElement == null) {
+                    document.getElementById("webcam-container").appendChild(webcam.canvas);
+                }
+
+                console.log("init Webcam !!");
+
+                webcam.play();
+
+            }).then(noResult => {
+                window.requestAnimationFrame(loop);
+            });
+        }
+    }
+
+    async function loop() {
+        webcam.update(); // update the webcam frame
+        predict().then(noResult => {
+            window.requestAnimationFrame(loop);
+        })
+    }
+
+    async function predict() {
+        // predict can take in an image, video or canvas html element
+        model.predict(webcam.canvas).then(prediction => {
+            for (let i = 0; i < maxPredictions; i++) {
+                const classPrediction = prediction[i].className + ": " + prediction[i].probability.toFixed(2);
+                labelContainer.childNodes[i].innerHTML = classPrediction;
+            }
+        });
+    }
+
+</script>
+
+<body>
+    <div>Teachable Machine Image Model</div>
+
+    <div style="margin-top: 10px;">
+
+        <button id="startAndStop_img" onclick="trigger();">Start</button>
+
+        <div id="webcam-container" style="margin-top: 10px;"></div>
+
+        <div id="label-container" style="margin-top: 10px;"></div>
+
+    </div>
+
+    <script>
+        loadModel();
+
+    </script>
+
+</body>
+
+</html>

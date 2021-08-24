@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=yes, initial-scale=1, maximum-scale=1">
+    <title>OpenCV NodeJS Demo</title>
+</head>
+
+<style>
+    .boxes-container {
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 100%;
+        position: relative;
+    }
+</style>
+
+<script>
+    var predictResult = null;
+    var tensorflowModel = null;
+    var predictLock = false;
+
+    var isRunningPredict = false;
+
+    function isStartPredict() {
+        if (!isRunningPredict) {
+            isRunningPredict = true;
+
+            setTimeout(runningPredict);
+        } else {
+            isRunningPredict = false;
+        }
+    }
+
+    function runningPredict() {
+        if (isRunningPredict) {
+
+            if (!predictLock) {
+
+                predictLock = true;
+
+                let startTime = Date.now();
+
+                predict().then(result => {
+                    let endTime = Date.now();
+
+                    let cost = endTime - startTime;
+                    let predictFPS = 1000 / cost;
+
+                    predictResult = result;
+
+                    let delay = 1000 / 30 - (endTime - startTime);
+
+                    if (delay < 0) {
+                        delay = 0;
+                    }
+
+                    predictLock = false;
+
+                    console.log("tensorflow cost: " + cost);
+
+                    setTimeout(runningPredict, delay);
+                }).catch(error => {
+                    console.log("predictError: ", error)
+                });
+            }
+        }
+    }
+
+    function onOpenCvReady() {
+        console.log("onOpenCvReady", cv);
+    }
+
+    async function predict() {
+        if (tensorflowModel != null) {
+            let result = null;
+            if (userStates == 1) {
+                //userCameraContainer
+                result = tensorflowModel.predict(value);
+
+            } else if (userStates == 2) {
+                //ImgContainer
+                result = tensorflowModel.predict(img);
+            }
+
+            return result;
+        }
+    }
+
+    function onTensorflowTasksReady() {
+        console.log("TensorflowTasksReady");
+
+        loadModel().then(value => {
+            tensorflowModel = value;
+        });
+    }
+
+    async function loadModel() {
+        let model = await tfTask.ObjectDetection.CocoSsd.TFJS.load({
+            backend: "webgl"
+        });
+
+        console.log("Tensorflow model: ", model);
+
+        return model;
+    };
+
+</script>
+
+<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+<script async src="https://cdn.jsdelivr.net/npm/@tensorflow-models/tasks" onload="onTensorflowTasksReady();"
+    type="text/javascript"></script>
+
+<script async src="opencv.js" onload="onOpenCvReady();" type="text/javascript"></script>
+
+<body>
+    <div>
+        <div id="ImgContainer">
+            Url:
+            <input type="text" id="input_Img_Url" value="http://192.168.0.166:8080/?action=stream">
+
+            <button id="startAndStop_img" onclick="ImageTrigger()">Start</button>
+        </div>
+
+        <div id="CameraContainer" style="margin-top: 20px;">
+            Camera:
+            <button id="startAndStop" onclick="cameraTrigger()">Start</button>
+        </div>
+
+        <div style="display: table; margin-bottom: 10px;">
+            <div style="float: left; width: 320px; height: 240px; margin: 10px; border: 5px solid #555;">
+                <video id="videoInput" width=320 height=240 onloadeddata="isStartPredict();"></video>
+                <canvas id="direct" width=320 height=240></canvas>
+            </div>
+
+            <div style="float: left; width: 320px; height: 240px; margin: 10px; border: 5px solid #555;">
+                <canvas id="videoOutput"></canvas>
+
+            </div>
+        </div>
+
+        <div style="margin-bottom: 10px;">
+            <p id="cameraFPS">cameraFPS：</p>
+            <p id="detectLineFPS">detectLineFPS：</p>
+            <p id="detectLineTime">detectLineProcessTime(ms)：</p>
+        </div>
+
+        leftUpX:
+        <input type="number" min="0" id="input_leftUpX">
+        leftUpY:
+        <input type="number" min="0" id="input_leftUpY">
+        <br>
+        rightUpX:
+        <input type="number" min="0" id="input_rightUpX">
+        rightUpY:
+        <input type="number" min="0" id="input_rightUpY">
+        <br>
+        rightDownX:
+        <input type="number" min="0" id="input_rightDownX">
+        rightDownY:
+        <input type="number" min="0" id="input_rightDownY">
+        <br>
+        leftDownX:
+        <input type="number" min="0" id="input_leftDownX">
+        leftDownY:
+        <input type="number" min="0" id="input_leftDownY">
+        <br>
+        <button onclick=ChangeValue()>ChangeValue</button>
+
+    </div>
+</body>
+
+<script type="text/javascript">
+
+    var isDetectCameraFPS = false;
+    var cameraFPS = 0;
+
+    var isDetectDectectLineFPS = false;
+    var detectLineFPS = 0;
+
+    //Img用的參數
+    var input_Img_Url = document.getElementById('input_Img_Url');
+    var startAndStop_img = document.getElementById('startAndStop_img');
+
+    var img = new Image;
+    var direct = document.getElementById('direct');
+    var ctx_direct = direct.getContext('2d');
+    var imgData = null;
+
+    //相機用的參數
+    var video = document.getElementById('videoInput');
+    var canvasOutput = document.getElementById('videoOutput');
+    var canvasContext = canvasOutput.getContext('2d');
+    var startAndStop = document.getElementById('startAndStop');
+
+    var src = null;
+    var dst = null;
+    var cap = null;
+
+    //將黃色成白色的方法參數
+    var rgbMat = null;
+    var hsvMat = null;
+    var upperYellow = null;
+    var lowerYellow = null;
+    var maskInverseMat = null;
+    var grayMat = null;
+    var masked_replace_white = null;
+
+    //轉成灰階
+    var toGrayScaleMat = null;
+
+    //高斯模糊用
+    var gausianKernelValue = 5;
+    var gaussianBlurMat = null;
+    var ksize = null;
+
+    //邊緣偵測
+    var cannyThreshold1 = 100;
+    var cannyThreshold2 = 200;
+    var apertureSize = 3;
+    var cannyMat = null;
+
+    //region_of_interest
+    var mask = null;
+    var maskPolyColor = null;
+
+    var leftUpX = 46;
+    var leftUpY = 90;
+
+    var rightUpX = 266;
+    var rightUpY = 90;
+
+    var rightDownX = 316;
+    var rightDownY = 150;
+
+    var leftDownX = 0;
+    var leftDownY = 150;
+
+    document.getElementById("input_leftUpX").value = leftUpX;
+    document.getElementById("input_leftUpY").value = leftUpY;
+
+    document.getElementById("input_rightUpX").value = rightUpX;
+    document.getElementById("input_rightUpY").value = rightUpY;
+
+    document.getElementById("input_rightDownX").value = rightDownX;
+    document.getElementById("input_rightDownY").value = rightDownY;
+
+    document.getElementById("input_leftDownX").value = leftDownX;
+    document.getElementById("input_leftDownY").value = leftDownY;
+
+    var square_point_data = new Int32Array([
+        leftUpX, leftUpY,
+        rightUpX, rightUpY,
+        rightDownX, rightDownY,
+        leftDownX, leftDownY]);
+
+    var square_points = null;
+    var pts = null;
+    var emptyMat = null;
+
+    //推斷
+    var checkPosSlopes = 0.50;
+    var checkNegSlopes = -0.50;
+    var cannyOutPutMat = null;
+
+    var lineColor = null;
+
+    var isinital = false;
+
+    let isCameraOpen = false;
+
+    function detectLine_function() {
+        // console.log("Detect Line FPS: ", detectLineFPS);
+
+        document.getElementById('detectLineFPS').innerHTML = "detectLineFPS:" + detectLineFPS;
+
+        if (isDetectDectectLineFPS) {
+            detectLineFPS = 0;
+            setTimeout(detectLine_function, 1000);
+        }
+    }
+
+    function isStartDetectLineFPS() {
+        if (!isDetectDectectLineFPS) {
+            isDetectDectectLineFPS = true;
+            detectLineFPS = 0;
+            setTimeout(detectLine_function, 1000);
+        } else {
+            isDetectDectectLineFPS = false;
+        }
+    }
+
+    function detectFPS_function() {
+        // console.log("Camera FPS: ", cameraFPS);
+
+        document.getElementById('cameraFPS').innerHTML = "cameraFPS:" + cameraFPS;
+
+        if (isDetectCameraFPS) {
+            cameraFPS = 0;
+            setTimeout(detectFPS_function, 1000);
+        }
+    }
+
+    initContainer();
+    var userStates = 0;
+    function initContainer() {
+        isinital = false;
+        document.getElementById("CameraContainer").style.visibility = "visible";
+        document.getElementById("ImgContainer").style.visibility = "visible";
+
+        document.getElementById("videoInput").style.display = "none";
+        document.getElementById("direct").style.display = "none";
+
+        userStates = 0;
+
+        //document.getElementById("test").style.visibility = "visible";//顯示
+        //document.getElementById("test").style.visibility = "hidden";//隱藏 等於java的invisible
+        //document.getElementById("test").style.display="";//顯示
+        //document.getElementById("test").style.display="none";//隱藏 等於java的gone
+    }
+
+    function userCameraContainer() {
+        document.getElementById("CameraContainer").style.visibility = "visible";
+        document.getElementById("ImgContainer").style.visibility = "hidden";
+
+        document.getElementById("videoInput").style.display = "";
+        document.getElementById("direct").style.display = "none";
+
+        userStates = 1;
+
+        //document.getElementById("test").style.visibility = "visible";//顯示
+        //document.getElementById("test").style.visibility = "hidden";//隱藏 等於java的invisible
+        //document.getElementById("test").style.display="";//顯示
+        //document.getElementById("test").style.display="none";//隱藏 等於java的gone
+    }
+
+    function userImgContainer() {
+        document.getElementById("CameraContainer").style.visibility = "hidden";
+        document.getElementById("ImgContainer").style.visibility = "visible";
+
+        document.getElementById("videoInput").style.display = "none";
+        document.getElementById("direct").style.display = "";
+
+        userStates = 2;
+
+        //document.getElementById("test").style.visibility = "visible";//顯示
+        //document.getElementById("test").style.visibility = "hidden";//隱藏 等於java的invisible
+        //document.getElementById("test").style.display="";//顯示
+        //document.getElementById("test").style.display="none";//隱藏 等於java的gone
+    }
+
+
+    function isStartDetectCameraFPS(isStart) {
+        if (!isDetectCameraFPS) {
+            isDetectCameraFPS = true;
+            cameraFPS = 0;
+            setTimeout(detectFPS_function, 1000);
+        } else {
+            isDetectCameraFPS = false;
+        }
+    }
+
+    function openDeviceCamera(callBack) {
+        if (isCameraOpen == false) {
+
+            isCameraOpen = true;
+
+            //{ video: true, audio: false }
+            navigator.mediaDevices.getUserMedia({ video: { width: { exact: 320 }, height: { exact: 240 } } }).then(function (stream) {
+
+                let tracks = stream.getVideoTracks();
+                console.log('Using stream device: ' + stream);
+                console.log('Using tracks device: ' + tracks);
+
+                video.srcObject = stream;
+
+                isStartDetectCameraFPS();
+                isStartDetectLineFPS();
+
+                video.play();
+                callBack();
+                startAndStop.innerText = 'Stop';
+                userCameraContainer();
+            }).catch(function (err) {
+                console.log("An error occurred! " + err);
+                alert(err);
+            });
+        }
+    }
+
+    function closeDeviceCamera() {
+        if (video) {
+            video.pause();
+            video.srcObject.getVideoTracks()[0].stop();
+            video.srcObject = null;
+        }
+        startAndStop.innerText = 'Start';
+
+        isCameraOpen = false;
+        isinital = false;
+        startAndStop.innerText = 'Start';
+        initContainer();
+    }
+
+    var source = document.createElement('source');
+
+    function cameraTrigger() {
+
+        if (isCameraOpen) {
+            closeDeviceCamera();
+            isStartDetectCameraFPS();
+            isStartDetectLineFPS();
+            isStartPredict();
+        } else {
+            openDeviceCamera(processVideo);
+        }
+    }
+
+    var isSetUrl = false;
+    var isStartProcessImage = false;
+
+    function ImageTrigger() {
+
+        if (isSetUrl == false) {
+            isSetUrl = true;
+
+            img.onload = function () {
+                direct.width = this.naturalWidth;
+                direct.height = this.naturalHeight;
+                img.onload = null;
+
+                isStartPredict();
+
+                if (isStartProcessImage == false) {
+                    isStartProcessImage = true;
+                    processImage();
+                }
+
+            };
+
+            img.crossOrigin = "Anonymous";
+
+            try {
+                img.src = input_Img_Url.value;
+            } catch (error) {
+                console.log("camera error: ", error);
+            }
+
+            startAndStop_img.innerText = 'Stop';
+
+            isStartDetectCameraFPS();
+            isStartDetectLineFPS();
+            userImgContainer();
+
+        } else {
+
+            isSetUrl = false;
+            isStartProcessImage = false;
+            img.src = "";
+            startAndStop_img.innerText = 'Start';
+
+            isStartDetectCameraFPS();
+            isStartDetectLineFPS();
+            isStartPredict();
+            initContainer();
+        }
+    }
+
+    function ChangeValue() {
+        leftUpX = parseInt(document.getElementById("input_leftUpX").value);
+        leftUpY = parseInt(document.getElementById("input_leftUpY").value);
+
+        rightUpX = parseInt(document.getElementById("input_rightUpX").value);
+        rightUpY = parseInt(document.getElementById("input_rightUpY").value);
+
+        rightDownX = parseInt(document.getElementById("input_rightDownX").value);
+        rightDownY = parseInt(document.getElementById("input_rightDownY").value);
+
+        leftDownX = parseInt(document.getElementById("input_leftDownX").value);
+        leftDownY = parseInt(document.getElementById("input_leftDownY").value);
+
+
+        square_point_data = null;
+        square_point_data = new Int32Array([
+            leftUpX, leftUpY,
+            rightUpX, rightUpY,
+            rightDownX, rightDownY,
+            leftDownX, leftDownY]);
+        square_points = cv.matFromArray(square_point_data.length / 2, 1, cv.CV_32SC2, square_point_data);
+
+    }
+
+    function initParameters() {
+
+        if (isinital == false) {
+            if (src == null) {
+                src = new cv.Mat(video.height, video.width, cv.CV_8UC4);
+            }
+
+            if (dst == null) {
+                dst = new cv.Mat();
+            }
+
+            if (rgbMat == null) {
+                rgbMat = new cv.Mat();
+            }
+
+            if (hsvMat == null) {
+                hsvMat = new cv.Mat();
+            }
+
+            if (maskInverseMat == null) {
+                maskInverseMat = new cv.Mat();
+            }
+
+            if (grayMat == null) {
+                grayMat = new cv.Mat();
+            }
+
+            if (masked_replace_white == null) {
+                masked_replace_white = new cv.Mat();
+            }
+
+            if (gaussianBlurMat == null) {
+                gaussianBlurMat = new cv.Mat()
+            }
+
+            if (ksize == null) {
+                ksize = new cv.Size(gausianKernelValue, gausianKernelValue)
+            }
+
+            if (toGrayScaleMat == null) {
+                toGrayScaleMat = new cv.Mat();
+            }
+
+            if (cannyMat == null) {
+                cannyMat = new cv.Mat();
+            }
+
+            if (cannyOutPutMat == null) {
+                cannyOutPutMat = new cv.Mat();
+            }
+
+            if (maskPolyColor == null) {
+                maskPolyColor = new cv.Scalar(255);
+            }
+
+            if (square_points == null) {
+                square_points = cv.matFromArray(square_point_data.length / 2, 1, cv.CV_32SC2, square_point_data);
+            }
+
+            if (pts == null) {
+                pts = new cv.MatVector();
+            }
+
+            if (emptyMat == null) {
+                emptyMat = new cv.Mat()
+            }
+
+            if (lineColor == null) {
+                lineColor = new cv.Scalar(0, 0, 255);
+            }
+
+            if (cap == null && video != null) {
+                cap = new cv.VideoCapture(video);
+            }
+
+            isinital = true;
+        }
+    }
+
+    function drawPredictResult() {
+        if (predictResult != null) {
+            console.log("predict result: ", predictResult);
+
+            const objects = predictResult.objects;
+
+            for (let i = 0; i < objects.length; i++) {
+                const curObject = objects[i];
+                const boundingBox = curObject.boundingBox;
+                const name = curObject.className;
+                const score = curObject.score;
+
+                canvasContext.strokeStyle = "#FF00FF80";
+                canvasContext.strokeRect(boundingBox.originX, boundingBox.originY, boundingBox.width, boundingBox.height);
+
+                //Draw text
+                const textBackgroundHeight = 30;
+                canvasContext.fillStyle = "#FF00FF80";
+                canvasContext.fillRect(boundingBox.originX, boundingBox.originY, boundingBox.width, textBackgroundHeight);
+
+                //Font
+                const displayString = curObject.className + " " + curObject.score;
+                canvasContext.font = "20px serif";
+                canvasContext.fillStyle = "#FFFFFF";
+
+                let textX = boundingBox.originX + 10;
+                let textY = boundingBox.originY + 20;
+
+                canvasContext.fillText(displayString, textX, textY);
+            }
+        }
+    }
+
+    function processVideo() {
+
+        //這樣作的目地是為了保證不會死在 opencv.js 30行，而且完全不知道錯誤是什麼！！！
+        initParameters();
+
+        const FPS = 30;
+
+        if (!video.srcObject) {
+            // clean and stop.
+            return;
+        }
+
+        let begin = Date.now();
+        // start processing.
+
+        if (src == null) {
+            src = new cv.Mat(video.height, video.width, cv.CV_8UC4);
+        }
+        if (cap == null && video != null) {
+            cap = new cv.VideoCapture(video);
+        }
+
+        try {
+            cap.read(src);
+            cameraFPS++;
+        } catch (error) {
+            console.log("camera error: ", error);
+        }
+
+        // console.log('image width: ' + src.cols + '\n' +
+        // 'image height: ' + src.rows + '\n' +
+        // 'image size: ' + src.size().width + '*' + src.size().height + '\n' +
+        // 'image depth: ' + src.depth() + '\n' +
+        // 'image channels ' + src.channels() + '\n' +
+        // 'image type: ' + src.type() + '\n');
+
+        // cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY);
+
+        let startTime = Date.now();
+
+        yellowToWhiteImage(src)
+
+        cv.cvtColor(masked_replace_white, toGrayScaleMat, cv.COLOR_RGB2GRAY);
+
+        let gaussianBlurMat2 = new cv.Mat();
+
+        cv.GaussianBlur(toGrayScaleMat, gaussianBlurMat2, ksize, 0, 0, cv.BORDER_DEFAULT);
+
+        cv.Canny(gaussianBlurMat2, cannyMat, cannyThreshold1, cannyThreshold2, apertureSize, false);
+
+        gaussianBlurMat2.delete();
+        //region_of_interest
+        if (mask == null) {
+            mask = cv.Mat.zeros(cannyMat.rows, cannyMat.cols, cannyMat.type());
+        }
+
+        if (pts != null) {
+            pts.delete()
+            pts = new cv.MatVector();
+            pts.push_back(square_points);
+        }
+
+        cv.fillPoly(mask, pts, maskPolyColor);
+
+        cv.bitwise_and(cannyMat, mask, cannyOutPutMat, emptyMat);
+
+        //找線
+        let houghLinesPMat = cannyOutPutMat.clone();
+
+        let linesMat = new cv.Mat()
+
+        try {
+            cv.HoughLinesP(houghLinesPMat, linesMat, 1.0, Math.PI / 180, 20, 5, 5);
+        } catch (error) {
+            console.log("HoughLinesP Error: " + error)
+        }
+
+        houghLinesPMat.delete();
+        //推斷
+        // drawLine(src, linesMat);
+        // console.log("lines (linesMat.rows) :", linesMat.rows);
+
+        let lines = matToVec4i(linesMat);
+        linesMat.delete();
+
+        // console.log("lines: ",lines);
+
+        if (lines.length > 0) {
+
+            let slopes = apply_along_axis_similar(lines);
+
+            let pos_slopes = checkSlopesVectorValue(slopes, 0, checkPosSlopes);
+            let pos_lines = fillterVectorValue(lines, pos_slopes);
+
+            // console.log("slopes: ",slopes);
+            // console.log("pos_slopes: ",pos_slopes);
+
+            let neg_slopes = checkSlopesVectorValue(slopes, 1, checkNegSlopes);
+            let neg_lines = fillterVectorValue(lines, neg_slopes);
+
+            let posResult = lines_linreg_by_OpenCV(pos_lines, linesMat);
+            let negResult = lines_linreg_by_OpenCV(neg_lines, linesMat);
+
+            // console.log("posResult: ",posResult);
+            // console.log("negResult: ",negResult);
+
+            if (posResult != null && negResult != null) {
+
+                detectLineFPS++;
+
+                // console.log("posResult: ",posResult);
+                // console.log("negResult: ",negResult);
+
+                let bottom_left_y = leftDownY;
+                let bottom_left_x = parseInt((bottom_left_y - negResult.c) / negResult.m);
+
+                // let min_top_y = 0;
+
+                // if(pos_lines.length > 0 && neg_lines.length > 0){
+                //     let neg_y_MinValue = Math.min.apply(null, negResult.yArray);
+                //     let pos_y_MinValue = Math.min.apply(null, posResult.yArray);
+                //     min_top_y = Math.min(neg_y_MinValue, pos_y_MinValue);
+                // }
+                // else if(pos_lines.size() > 0){
+                //     min_top_y = Math.min.apply(null, posResult.yArray);
+                // }
+                // else if(neg_lines.size() > 0){
+                //     min_top_y = Math.min.apply(null, negResult.yArray);
+                // }
+
+                let top_left_y = leftUpY;
+                let top_left_x = parseInt((top_left_y - negResult.c) / negResult.m);
+                let top_right_y = rightUpY;
+                let top_right_x = parseInt((top_right_y - posResult.c) / posResult.m);
+                let bottom_right_y = rightDownY;
+                let bottom_right_x = parseInt((bottom_right_y - posResult.c) / posResult.m);
+
+                let topLeft = new cv.Point(top_left_x, top_left_y);
+                let topRight = new cv.Point(top_right_x, top_right_y);
+
+                let bottomLeft = new cv.Point(bottom_left_x, bottom_left_y);
+                let bottomRight = new cv.Point(bottom_right_x, bottom_right_y);
+
+                // console.log("   topRight: ",topRight);
+                // console.log("bottomRight: ",bottomRight);
+
+                cv.line(src, bottomLeft, topLeft, lineColor, 2, cv.LINE_AA, 0);
+                cv.line(src, topRight, bottomRight, lineColor, 2, cv.LINE_AA, 0);
+            }
+        }
+
+        let roiImage = new cv.Mat.zeros(src.rows, src.cols, src.type());
+        cv.fillPoly(roiImage, pts, new cv.Scalar(0, 72, 0, 30));
+
+        let output = new cv.Mat();
+
+        cv.addWeighted(src, 1, roiImage, 1, 0, output);
+
+        roiImage.delete();
+
+        let endTime = Date.now();
+
+        let detectFps = 1000 / (endTime - startTime);
+
+        document.getElementById('detectLineTime').innerHTML = "detectLineProcessTime:" + (endTime - startTime);
+        // console.log("detectFps:", detectFps);
+
+        try {
+            cv.imshow('videoOutput', output);
+
+            output.delete();
+        } catch (error) {
+            console.log("cv imShow Error: " + error)
+            output.delete();
+        }
+
+        drawPredictResult();
+
+        // schedule the next one.
+        let delay = 1000 / FPS - (Date.now() - begin);
+
+        if (delay < 0) {
+            delay = 0;
+        }
+
+        // console.log("delay: "+delay);
+
+        setTimeout(processVideo, delay);
+    }
+
+    function initParameters_Image() {
+
+        if (isinital == false) {
+
+            if (dst == null) {
+                dst = new cv.Mat();
+            }
+
+            if (rgbMat == null) {
+                rgbMat = new cv.Mat();
+            }
+
+            if (hsvMat == null) {
+                hsvMat = new cv.Mat();
+            }
+
+            if (maskInverseMat == null) {
+                maskInverseMat = new cv.Mat();
+            }
+
+            if (grayMat == null) {
+                grayMat = new cv.Mat();
+            }
+
+            if (masked_replace_white == null) {
+                masked_replace_white = new cv.Mat();
+            }
+
+            if (gaussianBlurMat == null) {
+                gaussianBlurMat = new cv.Mat()
+            }
+
+            if (ksize == null) {
+                ksize = new cv.Size(gausianKernelValue, gausianKernelValue)
+            }
+
+            if (toGrayScaleMat == null) {
+                toGrayScaleMat = new cv.Mat();
+            }
+
+            if (cannyMat == null) {
+                cannyMat = new cv.Mat();
+            }
+
+            if (cannyOutPutMat == null) {
+                cannyOutPutMat = new cv.Mat();
+            }
+
+            if (maskPolyColor == null) {
+                maskPolyColor = new cv.Scalar(255);
+            }
+
+            if (square_points == null) {
+                square_points = cv.matFromArray(square_point_data.length / 2, 1, cv.CV_32SC2, square_point_data);
+            }
+
+            if (pts == null) {
+                pts = new cv.MatVector();
+            }
+
+            if (emptyMat == null) {
+                emptyMat = new cv.Mat()
+            }
+
+            if (lineColor == null) {
+                lineColor = new cv.Scalar(0, 0, 255);
+            }
+
+            isinital = true;
+        }
+    }
+
+    function processImage() {
+
+        //這樣作的目地是為了保證不會死在 opencv.js 30行，而且完全不知道錯誤是什麼！！！
+        initParameters_Image();
+
+        const FPS = 30;
+
+
+        let begin = Date.now();
+        // start processing.
+
+        if (isSetUrl == false || img == null) {
+            return;
+        }
+
+        ctx_direct.drawImage(img, 0, 0);
+
+
+        try {
+
+            if (imgData == null) {
+                imgData = ctx_direct.getImageData(0, 0, direct.width, direct.height);
+            }
+
+            src = cv.matFromImageData(imgData);
+            imgData = null;
+            cameraFPS++;
+        } catch (error) {
+            console.log("imgData error: ", error);
+        }
+
+        // console.log('image width: ' + src.cols + '\n' +
+        // 'image height: ' + src.rows + '\n' +
+        // 'image size: ' + src.size().width + '*' + src.size().height + '\n' +
+        // 'image depth: ' + src.depth() + '\n' +
+        // 'image channels ' + src.channels() + '\n' +
+        // 'image type: ' + src.type() + '\n');
+
+        // cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY);
+
+        let startTime = Date.now();
+
+        yellowToWhiteImage(src)
+
+        cv.cvtColor(masked_replace_white, toGrayScaleMat, cv.COLOR_RGB2GRAY);
+
+        let gaussianBlurMat2 = new cv.Mat();
+
+        cv.GaussianBlur(toGrayScaleMat, gaussianBlurMat2, ksize, 0, 0, cv.BORDER_DEFAULT);
+
+        cv.Canny(gaussianBlurMat2, cannyMat, cannyThreshold1, cannyThreshold2, apertureSize, false);
+
+        gaussianBlurMat2.delete();
+        //region_of_interest
+        if (mask == null) {
+            mask = cv.Mat.zeros(cannyMat.rows, cannyMat.cols, cannyMat.type());
+        }
+
+        if (pts != null) {
+            pts.delete()
+            pts = new cv.MatVector();
+            pts.push_back(square_points);
+        }
+
+        cv.fillPoly(mask, pts, maskPolyColor);
+
+        cv.bitwise_and(cannyMat, mask, cannyOutPutMat, emptyMat);
+
+        //找線
+        let houghLinesPMat = cannyOutPutMat.clone();
+
+        let linesMat = new cv.Mat()
+
+        try {
+            cv.HoughLinesP(houghLinesPMat, linesMat, 1.0, Math.PI / 180, 20, 5, 5);
+        } catch (error) {
+            console.log("HoughLinesP Error: " + error)
+        }
+
+        houghLinesPMat.delete();
+        //推斷
+        // drawLine(src, linesMat);
+        // console.log("lines (linesMat.rows) :", linesMat.rows);
+
+        let lines = matToVec4i(linesMat);
+        linesMat.delete();
+
+        // console.log("lines: ",lines);
+
+        if (lines.length > 0) {
+
+            let slopes = apply_along_axis_similar(lines);
+
+            let pos_slopes = checkSlopesVectorValue(slopes, 0, checkPosSlopes);
+            let pos_lines = fillterVectorValue(lines, pos_slopes);
+
+            // console.log("slopes: ",slopes);
+            // console.log("pos_slopes: ",pos_slopes);
+
+            let neg_slopes = checkSlopesVectorValue(slopes, 1, checkNegSlopes);
+            let neg_lines = fillterVectorValue(lines, neg_slopes);
+
+            let posResult = lines_linreg_by_OpenCV(pos_lines, linesMat);
+            let negResult = lines_linreg_by_OpenCV(neg_lines, linesMat);
+
+            // console.log("posResult: ",posResult);
+            // console.log("negResult: ",negResult);
+
+            if (posResult != null && negResult != null) {
+
+                detectLineFPS++;
+
+                // console.log("posResult: ",posResult);
+                // console.log("negResult: ",negResult);
+
+                let bottom_left_y = leftDownY;
+                let bottom_left_x = parseInt((bottom_left_y - negResult.c) / negResult.m);
+
+                // let min_top_y = 0;
+
+                // if(pos_lines.length > 0 && neg_lines.length > 0){
+                //     let neg_y_MinValue = Math.min.apply(null, negResult.yArray);
+                //     let pos_y_MinValue = Math.min.apply(null, posResult.yArray);
+                //     min_top_y = Math.min(neg_y_MinValue, pos_y_MinValue);
+                // }
+                // else if(pos_lines.size() > 0){
+                //     min_top_y = Math.min.apply(null, posResult.yArray);
+                // }
+                // else if(neg_lines.size() > 0){
+                //     min_top_y = Math.min.apply(null, negResult.yArray);
+                // }
+
+                let top_left_y = leftUpY;
+                let top_left_x = parseInt((top_left_y - negResult.c) / negResult.m);
+                let top_right_y = rightUpY;
+                let top_right_x = parseInt((top_right_y - posResult.c) / posResult.m);
+                let bottom_right_y = rightDownY;
+                let bottom_right_x = parseInt((bottom_right_y - posResult.c) / posResult.m);
+
+                let topLeft = new cv.Point(top_left_x, top_left_y);
+                let topRight = new cv.Point(top_right_x, top_right_y);
+
+                let bottomLeft = new cv.Point(bottom_left_x, bottom_left_y);
+                let bottomRight = new cv.Point(bottom_right_x, bottom_right_y);
+
+                // console.log("   topRight: ",topRight);
+                // console.log("bottomRight: ",bottomRight);
+
+                cv.line(src, bottomLeft, topLeft, lineColor, 2, cv.LINE_AA, 0);
+                cv.line(src, topRight, bottomRight, lineColor, 2, cv.LINE_AA, 0);
+            }
+        }
+
+        let roiImage = new cv.Mat.zeros(src.rows, src.cols, src.type());
+        cv.fillPoly(roiImage, pts, new cv.Scalar(0, 72, 0, 30));
+
+        let output = new cv.Mat();
+
+        cv.addWeighted(src, 1, roiImage, 1, 0, output);
+
+        roiImage.delete();
+
+        let endTime = Date.now();
+
+        let detectFps = 1000 / (endTime - startTime);
+
+        // console.log("detectFps:", detectFps);
+        document.getElementById('detectLineTime').innerHTML = "detectLineProcessTime(ms):" + (endTime - startTime);
+
+
+        try {
+            cv.imshow('videoOutput', output);
+
+            output.delete();
+            src.delete();
+            src = null;
+        } catch (error) {
+            console.log("cv imShow Error: " + error)
+            output.delete();
+            src.delete();
+            src = null;
+        }
+
+        drawPredictResult();
+
+        // schedule the next one.
+        let delay = 1000 / FPS - (Date.now() - begin);
+
+        if (delay < 0) {
+            delay = 0;
+        }
+
+        // console.log("delay: "+delay);
+
+        setTimeout(processImage, delay);
+    }
+
+    function lines_linreg_by_OpenCV(slopeLines, debugLineMat) {
+        if (slopeLines.length > 0) {
+
+            // console.log("slopeLines: ", slopeLines);
+
+            let pointArray = [];
+            let xEmptyContainer = [];
+            let yEmptyContainer = [];
+
+            for (let i = 0; i < slopeLines.length; i++) {
+                let line = slopeLines[i];
+
+                pointArray.push(line.x1);
+                pointArray.push(line.y1);
+                pointArray.push(line.x2);
+                pointArray.push(line.y2);
+
+                xEmptyContainer.push(line.x1);
+                xEmptyContainer.push(line.x2);
+            }
+
+            let pointMatrix = cv.matFromArray(pointArray.length / 2, 1, cv.CV_32SC2, pointArray);
+            let line = new cv.Mat();
+
+            cv.fitLine(pointMatrix, line, cv.DIST_L2, 0, 0.01, 0.01);
+
+            let m = line.data32F[1] / line.data32F[0];
+
+            let tmp = m * line.data32F[2];
+
+            let c = line.data32F[3] - tmp;
+
+            if (c > 10000 || c < -10000) {
+                // console.log("debugLineMat: ", debugLineMat.data32S)
+                // console.log("line.data32S: ", line.data32S);
+                // console.log("line.data32F: ", line.data32F);
+                // console.log("m: ", m);
+                // console.log("c: ", c);
+            }
+
+            for (let i = 0; i < xEmptyContainer.length; i++) {
+                //var intValue = parseInt(floatValue, 10);
+                let y = parseInt(parseFloat(xEmptyContainer[i]) * m + c);
+
+                // console.log("doubleY: ", doubleY);
+                // console.log("intY: ", intY);
+
+                yEmptyContainer.push(y);
+            }
+
+            // console.log("yEmptyContainer: ", yEmptyContainer);
+            // console.log("pointMatrix: ", pointMatrix);
+            // console.log("line: ", line);
+
+            return { m: m, c: c, xArray: xEmptyContainer, yArray: yEmptyContainer };
+
+        } else {
+            return null;
+        }
+    }
+
+    function fillterVectorValue(valueArray, fillterArray) {
+        let checkedArray = []
+
+        if (valueArray.length > 0 && fillterArray.length > 0) {
+
+            for (let i = 0; i < valueArray.length; ++i) {
+                if (fillterArray[i]) {
+                    checkedArray.push(valueArray[i]);
+                }
+            }
+        }
+
+        return checkedArray
+    }
+
+    function checkSlopesVectorValue(slopes, type, checkValue) {
+
+        let checkArray = []
+
+        for (let i = 0; i < slopes.length; ++i) {
+            let arrayValue = slopes[i];
+
+            let result = false;
+
+            if (type == 0)// >
+            {
+                if (!isNaN(arrayValue) && isFinite(arrayValue)) {
+                    result = arrayValue >= checkValue;
+                } else {
+                    result = false;
+                }
+            }
+            else if (type == 1)// <
+            {
+                if (!isNaN(arrayValue) && isFinite(arrayValue)) {
+                    result = arrayValue <= checkValue;
+                } else {
+                    result = false;
+                }
+            }
+            else // ==
+            {
+                result = arrayValue == checkValue;
+            }
+
+            checkArray.push(result);
+        }
+
+        return checkArray
+    }
+
+    function apply_along_axis_similar(lines) {
+
+        let slopes = [];
+
+        if (lines.length > 0) {
+
+            for (let i = 0; i < lines.length; ++i) {
+
+                let point = lines[i];
+
+                let x1 = point.x1;
+                let y1 = point.y1;
+                let x2 = point.x2;
+                let y2 = point.y2;
+
+                let value = (y2 - y1) / (x2 - x1);
+
+                slopes.push(value);
+                // if(!isNaN(value) && isFinite(value)){
+                //     slopes.push(value);
+                // }
+            }
+
+
+        }
+
+        return slopes;
+    }
+
+    function matToVec4i(linesMat) {
+        let lines = []
+
+        if (linesMat.rows > 0) {
+
+            // console.log("linesMat.data32S: ", linesMat.data32S);
+
+            for (let i = 0; i < linesMat.rows; ++i) {
+
+                let x1 = linesMat.data32S[i * 4];
+                let y1 = linesMat.data32S[i * 4 + 1];
+                let x2 = linesMat.data32S[i * 4 + 2];
+                let y2 = linesMat.data32S[i * 4 + 3];
+
+                let point = { x1: x1, y1: y1, x2: x2, y2: y2 };
+
+                lines.push(point);
+            }
+        }
+
+        return lines
+    }
+
+    function drawLine(outMat, linesMat) {
+        for (let i = 0; i < linesMat.rows; ++i) {
+
+            let startPoint = new cv.Point(linesMat.data32S[i * 4], linesMat.data32S[i * 4 + 1]);
+            let endPoint = new cv.Point(linesMat.data32S[i * 4 + 2], linesMat.data32S[i * 4 + 3]);
+
+            console.log("startPoint: ", startPoint);
+            console.log(" endPoint : ", endPoint);
+
+            cv.line(outMat, startPoint, endPoint, lineColor);
+        }
+    }
+
+    function yellowToWhiteImage(sorceMat) {
+
+        if (sorceMat) {
+            cv.cvtColor(sorceMat, rgbMat, cv.COLOR_RGBA2RGB);
+            cv.cvtColor(rgbMat, hsvMat, cv.COLOR_BGR2HSV);
+
+            if (upperYellow == null) {
+                upperYellow = new cv.Mat(hsvMat.rows, hsvMat.cols, hsvMat.type(), [100, 255, 255, 0]);
+            }
+
+            if (lowerYellow == null) {
+                lowerYellow = new cv.Mat(hsvMat.rows, hsvMat.cols, hsvMat.type(), [80, 100, 100, 0]);
+            }
+
+            cv.inRange(hsvMat, lowerYellow, upperYellow, maskInverseMat);
+
+            cv.cvtColor(maskInverseMat, grayMat, cv.COLOR_GRAY2RGB);
+            cv.addWeighted(rgbMat, 1, grayMat, 1, 0, masked_replace_white);
+
+        } else {
+
+        }
+    }
+
+</script>
+
+</html>

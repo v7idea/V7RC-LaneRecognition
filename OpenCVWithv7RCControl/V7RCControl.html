@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<!--
+    參考網址 
+    https://googlechrome.github.io/samples/web-bluetooth/device-disconnect.html
+    https://googlechrome.github.io/samples/web-bluetooth/discover-services-and-characteristics.html
+    https://googlechrome.github.io/samples/web-bluetooth/get-characteristics.html
+-->
+<html>
+
+<body>
+
+
+    <form>
+        <button id="scan">掃描</button>
+        <button id="disconnect">斷開</button>
+        <button id="reconnect">重新連接</button>
+    </form>
+
+    <table cellpadding="10" cellspacing="10">
+        <tbody>
+            <tr>
+                <td></td>
+                <td><button onclick="onForwardWriteButtonClick()">前</button></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td><button onclick="onLeftWriteButtonClick()">左</button></td>
+                <td><button onclick="onStopWriteButtonClick()">停</button></td>
+                <td><button onclick="onRightWriteButtonClick()">右</button></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td><button onclick="onLaterWriteButtonClick()">後</button></td>
+                <td></td>
+            </tr>
+
+        </tbody>
+    </table>
+    inputData:
+    <input type="text" id="input_Data" value="SRT1500150015001500#">
+    <button onclick="onDataWriteButtonClick()">寫入</button>
+
+    <script>
+        document.querySelector('#scan').addEventListener('click', function (event) {
+            event.stopPropagation();
+            event.preventDefault();
+
+            if (isWebBluetoothEnabled()) {
+                onScanButtonClick();
+            }
+        });
+        document.querySelector('#disconnect').addEventListener('click', function (event) {
+            event.stopPropagation();
+            event.preventDefault();
+
+            if (isWebBluetoothEnabled()) {
+                onDisconnectButtonClick();
+            }
+        });
+        document.querySelector('#reconnect').addEventListener('click', function (event) {
+            event.stopPropagation();
+            event.preventDefault();
+
+            if (isWebBluetoothEnabled()) {
+                onReconnectButtonClick();
+            }
+        });
+    </script>
+
+    <script>
+        function isWebBluetoothEnabled() {
+            if (navigator.bluetooth) {
+                return true;
+            } else {
+                alert("Web Bluetooth API 不可使用");
+                return false;
+            }
+        }
+    </script>
+
+
+
+    <script type="text/javascript">
+
+        var bluetoothDevice = null;
+        var serviceUuid = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
+        var writeCharacteristicUuid = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
+        var writeCharacteristic = null;
+
+        function onScanButtonClick() {
+            let options = {
+                acceptAllDevices: true,
+                optionalServices: [serviceUuid, '6e400002-b5a3-f393-e0a9-e50e24dcca9e', '6e400003-b5a3-f393-e0a9-e50e24dcca9e']
+            };
+            // options.filters.push({ name: "BBC micro:bit [vapig]" });
+
+            // let options = { acceptAllDevices: true }; //顯示全部
+
+            // let options = { filters: [] }; //過濾條件
+            // options.filters.push({services: [filterService]});
+            // options.filters.push({name: filterName});
+            // options.filters.push({namePrefix: filterNamePrefix});
+
+
+            bluetoothDevice = null;
+            console.log('Requesting Bluetooth Device...');
+            navigator.bluetooth.requestDevice(options)
+                .then(device => {
+                    bluetoothDevice = device;
+                    bluetoothDevice.addEventListener('gattserverdisconnected', onDisconnected);
+                    return connect();
+                })
+                .catch(error => {
+                    console.log('Argh! ' + error);
+                });
+        }
+
+        // function connect() {
+        //     console.log('Connecting to Bluetooth Device...');
+        //     return bluetoothDevice.gatt.connect()
+        //         .then(server => {
+        //             console.log('> Bluetooth Device connected :' + bluetoothDevice.name);
+        //         });
+        // }
+
+
+        function connect() {
+            console.log('Connecting to Bluetooth Device...');
+            return bluetoothDevice.gatt.connect()
+                .then(server => {
+                    console.log('Getting Service...');
+                    return server.getPrimaryService(serviceUuid);
+                })
+                .then(service => {
+                    console.log('Getting Characteristics...');
+                    return service.getCharacteristics(writeCharacteristicUuid);
+                }).then(characteristic => {
+                    console.log('Getting Descriptor...');
+                    console.log('> Characteristics: ' + characteristic.map(c => c.uuid).join('\n' + ' '.repeat(19)));
+
+                    writeCharacteristic = characteristic[0];
+
+                    alert("BLE is connect");
+                })
+
+                .catch(error => {
+                    console.log('Argh! ' + error);
+                });
+        }
+
+        function onDisconnectButtonClick() {
+            if (!bluetoothDevice) {
+                return;
+            }
+            console.log('Disconnecting from Bluetooth Device...');
+            if (bluetoothDevice.gatt.connected) {
+                bluetoothDevice.gatt.disconnect();
+            } else {
+                console.log('> Bluetooth Device is already disconnected');
+            }
+        }
+
+        function onDisconnected(event) {
+            // Object event.target is Bluetooth Device getting disconnected.
+            console.log('> Bluetooth Device disconnected');
+
+            writeCharacteristic = null;
+            alert("BLE is disconnect");
+        }
+
+        function onReconnectButtonClick() {
+            if (!bluetoothDevice) {
+                return;
+            }
+            if (bluetoothDevice.gatt.connected) {
+                console.log('> Bluetooth Device is already connected');
+                return;
+            }
+            connect()
+                .catch(error => {
+                    console.log('Argh! ' + error);
+                });
+        }
+
+
+        function onForwardWriteButtonClick() {
+            let value = "SRT1500200015001500#";
+            onWriteButtonClick(value);
+        }
+
+        function onLeftWriteButtonClick() {
+            let value = "SRT1000150015001500#";
+            onWriteButtonClick(value);
+        }
+
+        function onStopWriteButtonClick() {
+            let value = "SRT1500150015001500#";
+            onWriteButtonClick(value);
+        }
+
+        function onRightWriteButtonClick() {
+            let value = "SRT2000150015001500#";
+            onWriteButtonClick(value);
+        }
+
+        function onLaterWriteButtonClick() {
+            let value = "SRT1500100015001500#";
+            onWriteButtonClick(value);
+        }
+
+        function onDataWriteButtonClick() {
+            let value = document.getElementById("input_Data").value;
+            onWriteButtonClick(value);
+        }
+
+        function onWriteButtonClick(value) {
+
+            if (value == null || value === "") {
+                alert("value is null");
+                return;
+            }
+
+            if (writeCharacteristic == null) {
+                alert("writeCharacteristic is null");
+                return;
+            }
+
+            let encoder = new TextEncoder('utf-8');
+            // console.log('Setting Characteristic User Description...');
+
+            console.log(encoder.encode(value));
+
+            writeCharacteristic.writeValue(encoder.encode(value))
+                .then(_ => {
+                    console.log('> Characteristic User Description changed to: ' + value);
+                })
+                .catch(error => {
+                    console.log('Argh! ' + error);
+                });
+        }
+    </script>
+</body>
+
+</html>
