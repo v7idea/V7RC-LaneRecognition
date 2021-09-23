@@ -591,8 +591,11 @@
                 canvasContext.fillStyle = "#FF00FF80";
                 canvasContext.fillRect(boundingBox.originX, boundingBox.originY, boundingBox.width, textBackgroundHeight);
 
+                let scorePercentage = score * 100.0;
+                scorePercentage = scorePercentage.toFixed(1);
+
                 //Font
-                const displayString = curObject.className + " " + curObject.score;
+                const displayString = curObject.className + " " + scorePercentage + "%";
                 canvasContext.font = "20px serif";
                 canvasContext.fillStyle = "#FFFFFF";
 
