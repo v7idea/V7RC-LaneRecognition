@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+
+
+<body>
+  <p id="status">OpenCV.js is loading...</p>
+  <div>
+    <div class="inputoutput">
+      <img id="imageSrc" alt="No Image" />
+      <div class="caption">imageSrc <input type="file" id="fileInput" name="file" /></div>
+    </div>
+    <div class="inputoutput">
+      <canvas id="canvasOutput"></canvas>
+      <div class="caption">canvasOutput</div>
+
+      <canvas id="canvasOutput_H"></canvas>
+      <div class="caption">canvasOutput_H</div>
+
+      <canvas id="canvasOutput_L"></canvas>
+      <div class="caption">canvasOutput_L</div>
+
+      <canvas id="canvasOutput_S"></canvas>
+      <div class="caption">canvasOutput_S</div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    let imgElement = document.getElementById('imageSrc');
+    let inputElement = document.getElementById('fileInput');
+    inputElement.addEventListener('change', (e) => {
+      imgElement.src = URL.createObjectURL(e.target.files[0]);
+    }, false);
+    imgElement.onload = function () {
+      /*let mat = cv.imread(imgElement);
+      cv.imshow('canvasOutput', mat);
+      mat.delete();*/
+
+      var img = cv.imread(imgElement);
+      cv.cvtColor(img, img, cv.COLOR_BGR2RGB);
+
+      var dst = pipeline(img);
+      cv.convertScaleAbs(dst, dst);
+      
+      dst = perspective_warp(dst);
+
+      cv.imshow('canvasOutput', dst);
+
+
+
+
+      console.log("img dst size :", dst.size())
+      console.log('img dst type :', dst.type())
+      console.log('img dst cols :', dst.cols)
+      console.log('img dst rows :', dst.rows)
+      console.log('img dst depth:', dst.depth())
+      console.log('img dst channels:', dst.channels())
+
+      // let testMat = new cv.Mat();
+      // // You can try more different parameters
+      // let rect = new cv.Rect(0, 0, 1280, 720);//(	_Tp_x,_Tp_y,_Tp_width,_Tp_height )		
+
+      // testMat = dst.roi(rect);
+      // cv.imshow('canvasOutput_H', testMat);
+
+
+
+      // let dataArray_16u = dst.data16U;
+      // let dataArray_8u = new Uint8Array(dataArray_16u.buffer, dataArray_16u.byteOffset, dataArray_16u.byteLength);
+
+      // let count = 0;
+      // let matArray = [];
+      // // dst.rows
+      // for (let i = 0; i < dst.rows; i++) {
+      //   matArray.push([]);
+      //   for (let j = 0; j < dst.cols; j++) {
+      //     matArray[i].push(dataArray_8u[count++]);
+      //     // console.log('dataArray_8u', dataArray_8u[count++]);
+      //   }
+      // }
+      // console.log('matArray', matArray);
+      // // console.log('dataArray_8u', dataArray_8u);
+
+
+    };
+
+
+    function pipeline(img, s_thresh_0 = 100, s_thresh_1 = 255, sx_thresh_0 = 15, sx_thresh_1 = 255) {
+      // img = undistort(img)
+      // img = np.copy(img)
+
+      // Convert to HLS color space and separate the V channel
+      let hlsMat = new cv.Mat();
+
+      let channel = new cv.MatVector();
+      let h_channel = null;
+      let l_channel = null;
+      let s_channel = null;
+
+      cv.cvtColor(img, hlsMat, cv.COLOR_RGB2HLS);
+      cv.split(hlsMat, channel)
+
+
+      h_channel = channel.get(0);
+      l_channel = channel.get(1);
+      s_channel = channel.get(2);
+
+
+      let sobelx = new cv.Mat();
+
+      cv.Sobel(l_channel, sobelx, cv.CV_64F, 1, 1) // Take the derivative in x
+      //Absolute x derivative to accentuate lines away from horizontal
+      let scaled_sobel = new cv.Mat();
+      cv.convertScaleAbs(sobelx, scaled_sobel)
+
+      // Threshold x gradient
+      var sxbinary = new cv.Mat.zeros(scaled_sobel.rows, scaled_sobel.cols, scaled_sobel.type());
+      cv.threshold(scaled_sobel, sxbinary, sx_thresh_0, sx_thresh_1, cv.THRESH_BINARY);
+
+
+      // Threshold color channel
+      var s_binary = new cv.Mat.zeros(s_channel.rows, s_channel.cols, s_channel.type());
+      cv.threshold(s_channel, s_binary, s_thresh_0, s_thresh_1, cv.THRESH_BINARY);
+
+
+      //     color_binary = np.dstack((np.zeros_like(sxbinary), sxbinary, s_binary)) * 255 //應該不用翻
+
+
+      var combined_binary = new cv.Mat.zeros(sxbinary.rows, sxbinary.cols, sxbinary.type());
+
+      // combined_binary[(s_binary == 1) | (sxbinary == 1)] = 1
+
+      // cv.addWeighted(s_binary, 1, sxbinary, 1, 0, combined_binary); //方法一，不確定直接疊加出來的結果
+
+      //方法二，濾過全部點，並依照條件修改，相當於threshold，只是同時處理兩個Mat
+
+      for (let i = 0; i < combined_binary.rows; i++) {
+        for (let j = 0; j < combined_binary.cols; j++) {
+          if (s_binary.ucharPtr(i, j)[0] == 255 || sxbinary.ucharPtr(i, j)[0] == 255) {
+            combined_binary.ucharPtr(i, j)[0] = 255;
+          }
+        }
+      }
+
+      return combined_binary;
+    }
+
+    function perspective_warp(img) {
+
+      let dsize = new cv.Size(img.cols, img.rows);
+
+      console.log(dsize);
+
+
+      let srcTri = cv.matFromArray(4, 1, cv.CV_32FC2, [
+        550, 468,
+        742, 468,
+        1280, 720,
+        128, 720
+      ]);
+
+      let dstTri = cv.matFromArray(4, 1, cv.CV_32FC2, [
+        0, 0,
+        1280, 0,
+        1280, 720,
+        0, 720
+      ]);
+
+
+      var resultMat = new cv.Mat();
+      let M = cv.getPerspectiveTransform(srcTri, dstTri);
+      // You can try more different parameters
+      cv.warpPerspective(img, resultMat, M, dsize);
+
+      return resultMat;
+    }
+
+
+    function onOpenCvReady() {
+      document.getElementById('status').innerHTML = 'OpenCV.js is ready.';
+    }
+
+
+    // Author: Louis 2021-09-14
+    // calculate the sum of each pixels in the image, start from form 1/2 height.
+    function get_hist(dst) {
+
+        if(dst == undefined || dst == null) {
+          console.log('img_hist function error: imput is undefined or null;');
+          return null;
+        }
+
+        let rowsLength = dst.rows();
+        let output = [];
+
+        if (!isNaN(rowsLength)) {   // get the length of dst's row;
+
+            let i = 0;
+            let j = 0;
+
+            // 產生新的陣列;
+            for(i = 0; i < dst.cols(); i ++) {
+              
+                output.push(0);
+                for(j = rowsLength/2; j < rowsLength; j ++) {
+
+                    if(dst.ucharPtr(j, i)[0] == 255) {
+                      output[i] = output[i] + 1;
+                    }
+                
+                }
+            } 
+
+        }
+
+        return output;
+
+    }
+
+
+    // Author: Louis 2021-09-14
+    // calculate a array to show the position of non-zero ppixels of a image.
+    function image_unsero(img) {
+
+      if(img == undefined || img == null) {
+          console.log('image_unsero function error: imput is undefined or null;');
+          return null;
+        }
+
+      let result_rows = [];
+      let result_cols = [];
+      let rows_length = img.rows();
+      let cols_length = img.cols();
+      let output = [];
+
+      for(let i = 0; i < rows_length; i ++) {
+          
+          for(let j = 0; j < cols_length; j ++) {
+          
+            if(img.ucharPtr(i, j)[0] != 0) {
+
+              result_rows.push(j);
+              result_cols.push(i);
+
+            }
+
+          }
+      }
+      
+      output.push(result_rows);
+      output.push(result_cols);
+
+      return output;
+
+    }
+
+
+  </script>
+  <script async src="opencv.js" onload="onOpenCvReady();" type="text/javascript"></script>
+  <script src="https://cdn.jsdelivr.net/gh/nicolaspanel/numjs@0.15.1/dist/numjs.min.js"></script>
+
+</body>
+
+</html>

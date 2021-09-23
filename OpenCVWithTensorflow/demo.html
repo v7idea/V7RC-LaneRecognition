@@ -108,10 +108,11 @@
     };
 
 </script>
-
-<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
-<script async src="https://cdn.jsdelivr.net/npm/@tensorflow-models/tasks" onload="onTensorflowTasksReady();"
+<script async src="https://data.jsdelivr.com/v1/package/npm/@tensorflow-models/tasks/badge" onload="onTensorflowTasksReady();"
     type="text/javascript"></script>
+<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+<!-- <script async src="https://cdn.jsdelivr.net/npm/@tensorflow-models/tasks" onload="onTensorflowTasksReady();"
+    type="text/javascript"></script> -->
 
 <script async src="opencv.js" onload="onOpenCvReady();" type="text/javascript"></script>
 
@@ -772,9 +773,10 @@
         // console.log("detectFps:", detectFps);
 
         try {
-            cv.imshow('videoOutput', output);
 
+            cv.imshow('videoOutput', output);
             output.delete();
+            
         } catch (error) {
             console.log("cv imShow Error: " + error)
             output.delete();
