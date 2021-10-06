@@ -34,7 +34,7 @@
                 <tr>
                     <td>
                         
-                        <video id="videoInput" width="320" height="240"></video>
+                        <video id="videoInput" width="320" height="240" playsinline webkit-playsinline></video>
                     </td>
                     <td>
                         <canvas id="videoOutput" width="320" height="240"></canvas>
@@ -249,6 +249,7 @@ $(document).ready(function() {
                 console.log('Using tracks device: ' + tracks);
 
                 video.srcObject = stream;
+                video.crossOrigin = "Anonymous";
 
                 isStartDetectCameraFPS();
                 isStartDetectLineFPS();
