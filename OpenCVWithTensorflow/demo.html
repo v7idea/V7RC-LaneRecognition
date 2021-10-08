@@ -21,16 +21,19 @@
     var predictResult = null;
     var tensorflowModel = null;
     var predictLock = false;
-
     var isRunningPredict = false;
 
     function isStartPredict() {
+        
         if (!isRunningPredict) {
-            isRunningPredict = true;
 
+            isRunningPredict = true;
             setTimeout(runningPredict);
+        
         } else {
+
             isRunningPredict = false;
+        
         }
     }
 
@@ -44,6 +47,7 @@
                 let startTime = Date.now();
 
                 predict().then(result => {
+
                     let endTime = Date.now();
 
                     let cost = endTime - startTime;
@@ -304,7 +308,9 @@
     }
 
     initContainer();
+
     var userStates = 0;
+
     function initContainer() {
         isinital = false;
         document.getElementById("CameraContainer").style.visibility = "visible";
