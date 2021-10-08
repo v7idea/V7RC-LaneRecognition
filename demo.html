@@ -261,11 +261,13 @@ $(document).ready(function() {
                     console.log('containerWidth: ' + containerWidth);
                     console.log('containerHeight: ' + containerHeight);
 
-                    let videoWidth = this.width
-                    let videoHeight = this.height
+                    let videoWidth = video.videoWidth / 2
+                    let videoHeight = video.videoHeight / 2
 
-                    console.log('canvasOutput width: ' + canvasOutput.style.width);
-                    console.log('canvasOutput height: ' + canvasOutput.style.height);
+                    // console.log('tracks[0]  width / 2: ' + tracks[0].getSettings().width / 2);
+                    // console.log('tracks[0] height / 2: ' + tracks[0].getSettings().height / 2);
+                    console.log(' video.videoWidth: ' + video.videoWidth);
+                    console.log('video.videoHeight: ' + video.videoHeight);
 
                     let topAndBottom = (containerHeight - videoHeight) / 2
                     let leftAndRight = (containerWidth - videoWidth) / 2
