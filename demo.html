@@ -258,16 +258,31 @@ $(document).ready(function() {
                     let containerWidth = vidoOutputContainer.clientWidth
                     let containerHeight = vidoOutputContainer.clientHeight
 
-                    console.log('containerWidth: ' + containerWidth);
+                    console.log(' containerWidth: ' + containerWidth);
                     console.log('containerHeight: ' + containerHeight);
 
-                    let videoWidth = video.videoWidth / 2
-                    let videoHeight = video.videoHeight / 2
-
-                    // console.log('tracks[0]  width / 2: ' + tracks[0].getSettings().width / 2);
-                    // console.log('tracks[0] height / 2: ' + tracks[0].getSettings().height / 2);
                     console.log(' video.videoWidth: ' + video.videoWidth);
                     console.log('video.videoHeight: ' + video.videoHeight);
+
+                    let ratioW = containerWidth / video.videoWidth
+                    let ratioH = containerHeight / video.videoHeight
+                    let aceptRatio = 1
+
+                    if(ratioW < ratioH){
+                        aceptRatio = ratioW
+                    }else{
+                        aceptRatio = ratioH
+                    }
+
+                    console.log('    ratioW: ' + ratioW);
+                    console.log('    ratioH: ' + ratioH);
+                    console.log('aceptRatio: ' + aceptRatio);
+
+                    let videoWidth = video.videoWidth * aceptRatio;
+                    let videoHeight = video.videoHeight * aceptRatio;
+
+                    console.log(' videoWidth: ' + videoWidth);
+                    console.log('videoHeight: ' + videoHeight);
 
                     let topAndBottom = (containerHeight - videoHeight) / 2
                     let leftAndRight = (containerWidth - videoWidth) / 2
