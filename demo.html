@@ -45,12 +45,11 @@
 
         <div style="display: table; margin-bottom: 10px;">
             <div style="float: left; width: 320px; height: 240px; margin: 10px; border: 5px solid #555;">
-                <video id="videoInput" width=320 height=240 onloadeddata="isStartPredict();" playsinline webkit-playsinline></video>
+                <video id="videoInput" width=320 height=240 playsinline webkit-playsinline></video>
             </div>
 
-            <div style="float: left; width: 320px; height: 240px; margin: 10px; border: 5px solid #555;">
+            <div id="vidoOutputContainer" style="float: left; width: 320px; height: 240px; margin: 10px; border: 5px solid #555;">
                 <canvas id="videoOutput"></canvas>
-
             </div>
         </div>
 
@@ -254,11 +253,33 @@ $(document).ready(function() {
                 video.crossOrigin = "Anonymous";
 
                 video.onloadedmetadata = function(){
-                    console.log('onloadedmetadata stream.width: ' + this.width);
-                    console.log('onloadedmetadata stream.height: ' + this.height);
+                    let vidoOutputContainer = document.getElementById('vidoOutputContainer')
 
-                    canvasOutput.width = this.width
-                    canvasOutput.height = this.height
+                    let containerWidth = vidoOutputContainer.clientWidth
+                    let containerHeight = vidoOutputContainer.clientHeight
+
+                    console.log('containerWidth: ' + containerWidth);
+                    console.log('containerHeight: ' + containerHeight);
+
+                    let videoWidth = this.width
+                    let videoHeight = this.height
+
+                    console.log('canvasOutput width: ' + canvasOutput.style.width);
+                    console.log('canvasOutput height: ' + canvasOutput.style.height);
+
+                    let topAndBottom = (containerHeight - videoHeight) / 2
+                    let leftAndRight = (containerWidth - videoWidth) / 2
+
+                    console.log('topAndBottom: ' + topAndBottom);
+                    console.log('leftAndRight: ' + leftAndRight);
+
+                    canvasOutput.style.width = videoWidth + 'px';
+                    canvasOutput.style.height = videoHeight + 'px';
+
+                    canvasOutput.style.marginTop = topAndBottom + 'px';
+                    canvasOutput.style.marginBottom = topAndBottom + 'px';
+                    canvasOutput.style.marginLeft = leftAndRight + 'px';
+                    canvasOutput.style.marginRight = leftAndRight + 'px';
                 }
 
                 isStartDetectCameraFPS();
