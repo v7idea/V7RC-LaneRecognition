@@ -242,7 +242,6 @@ $(document).ready(function() {
     function openDeviceCamera(callBack) {
         if (isCameraOpen == false) {
 
-
             //{ video: true, audio: false }
             navigator.mediaDevices.getUserMedia({ video: {  width: { exact: 640 }, height: { exact: 480 } } }).then(function (stream) {
                 isCameraOpen = true;
@@ -253,6 +252,14 @@ $(document).ready(function() {
 
                 video.srcObject = stream;
                 video.crossOrigin = "Anonymous";
+
+                video.onloadedmetadata = function(){
+                    console.log('onloadedmetadata stream.width: ' + this.width);
+                    console.log('onloadedmetadata stream.height: ' + this.height);
+
+                    canvasOutput.width = this.width
+                    canvasOutput.height = this.height
+                }
 
                 isStartDetectCameraFPS();
                 isStartDetectLineFPS();
