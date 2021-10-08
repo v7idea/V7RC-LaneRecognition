@@ -21,15 +21,7 @@
         <select id="cameraList"></select>
         <div class="control"><button id="startAndStop" onclick=cameraTrigger()>啟動Camera</button></div>
 
-        <!-- <div bgcolor="yellow" id="videoArea">
-            <video id="videoInput" width=320 height=240></video>
-        </div>
-
-        <div bgcolor="green" id="outputArea">
-            <div class="caption">canvasOutput</div>
-            <canvas id="videoOutput"></canvas>
-        </div> -->
-        <table cellpadding="10" cellspacing="10" >
+        <!-- <table cellpadding="10" cellspacing="10" >
             <tbody>
                 <tr>
                     <td>
@@ -49,7 +41,18 @@
                     </td>
                 </tr>
             </tbody>
-        </table>
+        </table> -->
+
+        <div style="display: table; margin-bottom: 10px;">
+            <div style="float: left; width: 320px; height: 240px; margin: 10px; border: 5px solid #555;">
+                <video id="videoInput" width=320 height=240 onloadeddata="isStartPredict();" playsinline webkit-playsinline></video>
+            </div>
+
+            <div style="float: left; width: 320px; height: 240px; margin: 10px; border: 5px solid #555;">
+                <canvas id="videoOutput"></canvas>
+
+            </div>
+        </div>
 
         <p id="">Camera FPS：<span id="cameraFPS"></span></p>
 

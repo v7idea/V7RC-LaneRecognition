@@ -131,7 +131,7 @@
 
         <div style="display: table; margin-bottom: 10px;">
             <div style="float: left; width: 320px; height: 240px; margin: 10px; border: 5px solid #555;">
-                <video id="videoInput" width=320 height=240 onloadeddata="isStartPredict();"></video>
+                <video id="videoInput" width=320 height=240 onloadeddata="isStartPredict();" playsinline webkit-playsinline></video>
                 <canvas id="direct" width=320 height=240></canvas>
             </div>
 
@@ -375,6 +375,7 @@
                 console.log('Using tracks device: ' + tracks);
 
                 video.srcObject = stream;
+                video.crossOrigin = "Anonymous";
 
                 isStartDetectCameraFPS();
                 isStartDetectLineFPS();
