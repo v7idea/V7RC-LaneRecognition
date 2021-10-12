@@ -238,14 +238,14 @@ $(document).ready(function() {
         }
     }
 
-    function onOrientationChange(){
+    function onOrientationChange(e){
+        console.log('onOrientationChange e.orientation: ' + e.orientation);
+
         console.log('onOrientationChange window innerWidth: ' + window.innerWidth);
         console.log('onOrientationChange window innerHeight: ' + window.innerHeight);
         
         console.log('onOrientationChange  document.documentElement.clientWidth: ' + document.documentElement.clientWidth);
         console.log('onOrientationChange document.documentElement.clientHeight: ' + document.documentElement.clientHeight);
-
-        var ratio = window.devicePixelRatio || 1;
 
         console.log('onOrientationChange  window.screen.width: ' + window.screen.width);
         console.log('onOrientationChange window.screen.height: ' + window.screen.height);
@@ -283,9 +283,9 @@ $(document).ready(function() {
         }
     }
 
-    window.addEventListener('orientationchange', onOrientationChange);
+    window.addEventListener('orientationchange', onOrientationChange, false);
 
-    function videoChangeOrientation(e){
+    function videoChangeOrientation(){
         if(video != null){
             let vidoOutputContainer = document.getElementById('vidoOutputContainer')
 
