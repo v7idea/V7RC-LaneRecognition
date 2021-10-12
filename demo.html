@@ -256,6 +256,9 @@ $(document).ready(function() {
         if(video != null && video.srcObject != null){
             console.log(' video.videoWidth: ' + video.videoWidth);
             console.log('video.videoHeight: ' + video.videoHeight);
+
+            console.log(' video.offsetWidth: ' + video.offsetWidth);
+            console.log('video.offsetHeight: ' + video.offsetHeight);
         }
 
         if(window.orientation == 90 || window.orientation == -90){
@@ -348,8 +351,6 @@ $(document).ready(function() {
                 let tracks = stream.getVideoTracks();
                 console.log('Using stream device: ' + stream);
                 console.log('Using tracks device: ' + tracks);
-
-                video.aceptRatio = 4/3;
 
                 video.srcObject = stream;
                 video.crossOrigin = "Anonymous";
