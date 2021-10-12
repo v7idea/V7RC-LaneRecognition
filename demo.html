@@ -245,8 +245,14 @@ $(document).ready(function() {
         console.log('onOrientationChange  document.documentElement.clientWidth: ' + document.documentElement.clientWidth);
         console.log('onOrientationChange document.documentElement.clientHeight: ' + document.documentElement.clientHeight);
 
+        var ratio = window.devicePixelRatio || 1;
+
         console.log('onOrientationChange  window.screen.width: ' + window.screen.width);
         console.log('onOrientationChange window.screen.height: ' + window.screen.height);
+
+        console.log('onOrientationChange  devicePixelRatio: ' + ratio);
+        console.log('onOrientationChange  screen.width: ' + screen.width);
+        console.log('onOrientationChange  screen.width: ' + screen.height);
 
         if(document.documentElement.clientHeight < document.documentElement.clientWidth){
             // landScape
