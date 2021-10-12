@@ -239,19 +239,24 @@ $(document).ready(function() {
     }
 
     function onOrientationChange(){
-        console.log('onOrientationChange window.orientation: ' + window.orientation);
+        // console.log('onOrientationChange window.orientation: ' + window.orientation);
 
-        console.log('onOrientationChange window innerWidth: ' + window.innerWidth);
-        console.log('onOrientationChange window innerHeight: ' + window.innerHeight);
+        // console.log('onOrientationChange window innerWidth: ' + window.innerWidth);
+        // console.log('onOrientationChange window innerHeight: ' + window.innerHeight);
         
-        console.log('onOrientationChange  document.documentElement.clientWidth: ' + document.documentElement.clientWidth);
-        console.log('onOrientationChange document.documentElement.clientHeight: ' + document.documentElement.clientHeight);
+        // console.log('onOrientationChange  document.documentElement.clientWidth: ' + document.documentElement.clientWidth);
+        // console.log('onOrientationChange document.documentElement.clientHeight: ' + document.documentElement.clientHeight);
 
-        console.log('onOrientationChange  window.screen.width: ' + window.screen.width);
-        console.log('onOrientationChange window.screen.height: ' + window.screen.height);
+        // console.log('onOrientationChange  window.screen.width: ' + window.screen.width);
+        // console.log('onOrientationChange window.screen.height: ' + window.screen.height);
 
-        console.log('onOrientationChange  screen.width: ' + document.body.clientWidth);
-        console.log('onOrientationChange  screen.height: ' + document.body.clientHeight);
+        // console.log('onOrientationChange  screen.width: ' + document.body.clientWidth);
+        // console.log('onOrientationChange  screen.height: ' + document.body.clientHeight);
+
+        if(video != null && video.srcObject != null){
+            console.log('onOrientationChange  video.srcObject.videoWidth: ' + video.srcObject.videoWidth);
+            console.log('onOrientationChange video.srcObject.videoHeight: ' + video.srcObject.videoHeight);
+        }
 
         if(window.orientation == 90 || window.orientation == -90){
             // landScape
