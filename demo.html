@@ -241,25 +241,25 @@ $(document).ready(function() {
     function onOrientationChange(){
         if(window.innerWidth > window.innerHeight){
             // landScape
-            if(video != null){
+            if(video != null && video.srcObject != null){
                 let constraints = {
                     width: 320,
                     height: 240,
                     aspectRatio: 1.33333333
                 };
 
-                video.getVideoTracks()[0].applyConstraints(constraints);
+                video.srcObject.getVideoTracks()[0].applyConstraints(constraints);
             }
         }else if(window.innerWidth < window.innerHeight){
             // portrait
-            if(video != null){
+            if(video != null && video.srcObject != null){
                 let constraints = {
                     width: 240,
                     height: 320,
                     aspectRatio: 0.75
                 };
 
-                video.getVideoTracks()[0].applyConstraints(constraints);
+                video.srcObject.getVideoTracks()[0].applyConstraints(constraints);
             }
         }
 
