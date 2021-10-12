@@ -241,9 +241,12 @@ $(document).ready(function() {
     function onOrientationChange(){
         console.log('onOrientationChange window innerWidth: ' + window.innerWidth);
         console.log('onOrientationChange window innerHeight: ' + window.innerHeight);
-
-        console.log('onOrientationChange document.documentElement.clientHeight: ' + document.documentElement.clientHeight);
+        
         console.log('onOrientationChange  document.documentElement.clientWidth: ' + document.documentElement.clientWidth);
+        console.log('onOrientationChange document.documentElement.clientHeight: ' + document.documentElement.clientHeight);
+
+        console.log('onOrientationChange  window.screen.width: ' + window.screen.width);
+        console.log('onOrientationChange window.screen.height: ' + window.screen.height);
 
         if(document.documentElement.clientHeight < document.documentElement.clientWidth){
             // landScape
