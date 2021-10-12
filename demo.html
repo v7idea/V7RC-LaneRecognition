@@ -244,22 +244,26 @@ $(document).ready(function() {
             if(video != null && video.srcObject != null){
                 let constraints = {
                     width: 320,
-                    height: 240,
-                    aspectRatio: 1.33333333
+                    height: 240
                 };
 
-                video.srcObject.getVideoTracks()[0].applyConstraints(constraints);
+                video.srcObject.getVideoTracks()[0].applyConstraints(constraints).then(()=>{
+                    console.log('onOrientationChange landScape  video.videoWidth: ' + video.videoWidth);
+                    console.log('onOrientationChange landScape video.videoHeight: ' + video.videoHeight);
+                });
             }
         }else if(window.innerWidth < window.innerHeight){
             // portrait
             if(video != null && video.srcObject != null){
                 let constraints = {
                     width: 240,
-                    height: 320,
-                    aspectRatio: 0.75
+                    height: 320
                 };
 
-                video.srcObject.getVideoTracks()[0].applyConstraints(constraints);
+                video.srcObject.getVideoTracks()[0].applyConstraints(constraints).then(()=>{
+                    console.log('onOrientationChange landScape  video.videoWidth: ' + video.videoWidth);
+                    console.log('onOrientationChange landScape video.videoHeight: ' + video.videoHeight);
+                })
             }
         }
 
