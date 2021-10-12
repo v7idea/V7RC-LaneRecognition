@@ -253,7 +253,7 @@ $(document).ready(function() {
         console.log('onOrientationChange  screen.width: ' + document.body.clientWidth);
         console.log('onOrientationChange  screen.height: ' + document.body.clientHeight);
 
-        if(document.documentElement.clientHeight < document.documentElement.clientWidth){
+        if(window.orientation == 90 || window.orientation == -90){
             // landScape
             if(video != null && video.srcObject != null){
                 // let constraints = {
@@ -266,7 +266,7 @@ $(document).ready(function() {
                 // });
                 console.log('onOrientationChange landScape aceptRatio: ' + video.srcObject.aceptRatio);
             }
-        }else if(document.documentElement.clientHeight > document.documentElement.clientWidth){
+        }else{
             // portrait
             if(video != null && video.srcObject != null){
                 // let constraints = {
