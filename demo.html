@@ -250,7 +250,6 @@ $(document).ready(function() {
         console.log('onOrientationChange  window.screen.width: ' + window.screen.width);
         console.log('onOrientationChange window.screen.height: ' + window.screen.height);
 
-        console.log('onOrientationChange  devicePixelRatio: ' + ratio);
         console.log('onOrientationChange  screen.width: ' + document.body.clientWidth);
         console.log('onOrientationChange  screen.height: ' + document.body.clientHeight);
 
@@ -283,7 +282,7 @@ $(document).ready(function() {
         }
     }
 
-    window.addEventListener('orientationchange', onOrientationChange, false);
+    window.addEventListener('orientationchange', onOrientationChange, true);
 
     function videoChangeOrientation(){
         if(video != null){
