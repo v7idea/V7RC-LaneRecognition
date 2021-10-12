@@ -256,13 +256,13 @@ $(document).ready(function() {
             // portrait
             if(video != null && video.srcObject != null){
                 let constraints = {
-                    width: 240,
-                    height: 320
+                    width: 320,
+                    height: 240
                 };
 
                 video.srcObject.getVideoTracks()[0].applyConstraints(constraints).then(()=>{
-                    console.log('onOrientationChange landScape  video.videoWidth: ' + video.videoWidth);
-                    console.log('onOrientationChange landScape video.videoHeight: ' + video.videoHeight);
+                    console.log('onOrientationChange portrait  video.videoWidth: ' + video.videoWidth);
+                    console.log('onOrientationChange portrait video.videoHeight: ' + video.videoHeight);
                 })
             }
         }
