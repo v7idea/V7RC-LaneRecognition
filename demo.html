@@ -251,8 +251,8 @@ $(document).ready(function() {
         console.log('onOrientationChange window.screen.height: ' + window.screen.height);
 
         console.log('onOrientationChange  devicePixelRatio: ' + ratio);
-        console.log('onOrientationChange  screen.width: ' + screen.width);
-        console.log('onOrientationChange  screen.width: ' + screen.height);
+        console.log('onOrientationChange  screen.width: ' + document.body.clientWidth);
+        console.log('onOrientationChange  screen.height: ' + document.body.clientHeight);
 
         if(document.documentElement.clientHeight < document.documentElement.clientWidth){
             // landScape
@@ -285,7 +285,7 @@ $(document).ready(function() {
 
     window.addEventListener('orientationchange', onOrientationChange);
 
-    function videoChangeOrientation(){
+    function videoChangeOrientation(e){
         if(video != null){
             let vidoOutputContainer = document.getElementById('vidoOutputContainer')
 
