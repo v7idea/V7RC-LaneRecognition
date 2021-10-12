@@ -239,7 +239,13 @@ $(document).ready(function() {
     }
 
     function onOrientationChange(){
-        if(window.innerWidth > window.innerHeight){
+        console.log('onOrientationChange window innerWidth: ' + window.innerWidth);
+        console.log('onOrientationChange window innerHeight: ' + window.innerHeight);
+
+        console.log('onOrientationChange document.documentElement.clientHeight: ' + document.documentElement.clientHeight);
+        console.log('onOrientationChange  document.documentElement.clientWidth: ' + document.documentElement.clientWidth);
+
+        if(document.documentElement.clientHeight < document.documentElement.clientWidth){
             // landScape
             if(video != null && video.srcObject != null){
                 // let constraints = {
@@ -252,7 +258,7 @@ $(document).ready(function() {
                 // });
                 console.log('onOrientationChange landScape aceptRatio: ' + video.srcObject.aceptRatio);
             }
-        }else if(window.innerWidth < window.innerHeight){
+        }else if(document.documentElement.clientHeight > document.documentElement.clientWidth){
             // portrait
             if(video != null && video.srcObject != null){
                 // let constraints = {
