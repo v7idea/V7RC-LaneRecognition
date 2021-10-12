@@ -242,26 +242,28 @@ $(document).ready(function() {
         if(window.innerWidth > window.innerHeight){
             // landScape
             if(video != null && video.srcObject != null){
-                let constraints = {
-                    aspectRatio: 3/4
-                };
+                // let constraints = {
+                //     aspectRatio: 3/4
+                // };
 
-                video.srcObject.getVideoTracks()[0].applyConstraints(constraints).then(()=>{
-                    console.log('onOrientationChange landScape  video.videoWidth: ' + video.videoWidth);
-                    console.log('onOrientationChange landScape video.videoHeight: ' + video.videoHeight);
-                });
+                // video.srcObject.getVideoTracks()[0].applyConstraints(constraints).then(()=>{
+                //     console.log('onOrientationChange landScape  video.videoWidth: ' + video.videoWidth);
+                //     console.log('onOrientationChange landScape video.videoHeight: ' + video.videoHeight);
+                // });
+                console.log('onOrientationChange landScape aceptRatio: ' + video.srcObject.aceptRatio);
             }
         }else if(window.innerWidth < window.innerHeight){
             // portrait
             if(video != null && video.srcObject != null){
-                let constraints = {
-                    aspectRatio: 4/3
-                };
+                // let constraints = {
+                //     aspectRatio: 4/3
+                // };
 
-                video.srcObject.getVideoTracks()[0].applyConstraints(constraints).then(()=>{
-                    console.log('onOrientationChange portrait  video.videoWidth: ' + video.videoWidth);
-                    console.log('onOrientationChange portrait video.videoHeight: ' + video.videoHeight);
-                })
+                // video.srcObject.getVideoTracks()[0].applyConstraints(constraints).then(()=>{
+                //     console.log('onOrientationChange portrait  video.videoWidth: ' + video.videoWidth);
+                //     console.log('onOrientationChange portrait video.videoHeight: ' + video.videoHeight);
+                // })
+                console.log('onOrientationChange portrait aceptRatio: ' + video.srcObject.aceptRatio);
             }
         }
     }
@@ -329,30 +331,21 @@ $(document).ready(function() {
                 console.log('Using stream device: ' + stream);
                 console.log('Using tracks device: ' + tracks);
 
+                stream.aceptRatio = 4/3;
+
                 video.srcObject = stream;
                 video.crossOrigin = "Anonymous";
-
-                if(tracks.length > 0){
-
-                    let constraints = {
-                        aspectRatio: 4/3
-                    };
-
-                    tracks[0].applyConstraints(constraints).then(()=>{
-                        
-                        isStartDetectCameraFPS();
-                        isStartDetectLineFPS();
-
-                        video.play();
-                        callBack();
-                        startAndStop.innerText = '關閉攝像頭';
-
-                    })
-                }
 
                 video.onloadedmetadata = function(){
                     videoChangeOrientation();
                 }
+
+                isStartDetectCameraFPS();
+                isStartDetectLineFPS();
+
+                video.play();
+                callBack();
+                startAndStop.innerText = '關閉攝像頭';
 
             }).catch(function (err) {
                 console.log("An error occurred! " + err);
