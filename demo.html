@@ -255,7 +255,7 @@ $(document).ready(function() {
             // portrait
             if(video != null && video.srcObject != null){
                 let constraints = {
-                    aspectRatio: 4/3
+                    aspectRatio: 3/4
                 };
 
                 video.srcObject.getVideoTracks()[0].applyConstraints(constraints).then(()=>{
