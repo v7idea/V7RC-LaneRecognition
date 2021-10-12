@@ -256,9 +256,15 @@ $(document).ready(function() {
         if(video != null && video.srcObject != null){
             console.log(' video.videoWidth: ' + video.videoWidth);
             console.log('video.videoHeight: ' + video.videoHeight);
-
+            
             console.log(' video.offsetWidth: ' + video.offsetWidth);
             console.log('video.offsetHeight: ' + video.offsetHeight);
+
+            let settingWidth = video.getVideoTracks()[0].getSetting().width
+            let settingHeight = video.getVideoTracks()[0].getSetting().height
+
+            console.log(' settingWidth: ' + settingWidth);
+            console.log('settingHeight: ' + settingHeight);
         }
 
         if(window.orientation == 90 || window.orientation == -90){
