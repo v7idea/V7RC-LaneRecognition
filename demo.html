@@ -243,8 +243,7 @@ $(document).ready(function() {
             // landScape
             if(video != null && video.srcObject != null){
                 let constraints = {
-                    // aspectRatio: 16/9
-                    aspectRatio: 9/16
+                    aspectRatio: 3/4
                 };
 
                 video.srcObject.getVideoTracks()[0].applyConstraints(constraints).then(()=>{
@@ -256,8 +255,7 @@ $(document).ready(function() {
             // portrait
             if(video != null && video.srcObject != null){
                 let constraints = {
-                    // aspectRatio: 9/16
-                    aspectRatio: 16/9
+                    aspectRatio: 4/3
                 };
 
                 video.srcObject.getVideoTracks()[0].applyConstraints(constraints).then(()=>{
