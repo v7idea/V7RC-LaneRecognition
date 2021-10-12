@@ -255,7 +255,7 @@ $(document).ready(function() {
             // portrait
             if(video != null && video.srcObject != null){
                 let constraints = {
-                    aspectRatio: 3/4
+                    aspectRatio: 4/3
                 };
 
                 video.srcObject.getVideoTracks()[0].applyConstraints(constraints).then(()=>{
@@ -322,7 +322,7 @@ $(document).ready(function() {
         if (isCameraOpen == false) {
 
             //{ video: true, audio: false }
-            navigator.mediaDevices.getUserMedia({ video: {  aspectRatio: 4/3 } }).then(function (stream) {
+            navigator.mediaDevices.getUserMedia({ audio: false, video: true }).then(function (stream) {
                 isCameraOpen = true;
 
                 let tracks = stream.getVideoTracks();
@@ -332,16 +332,27 @@ $(document).ready(function() {
                 video.srcObject = stream;
                 video.crossOrigin = "Anonymous";
 
+                if(tracks.length > 0){
+
+                    let constraints = {
+                        aspectRatio: 4/3
+                    };
+
+                    tracks[0].applyConstraints(constraints).then(()=>{
+                        
+                        isStartDetectCameraFPS();
+                        isStartDetectLineFPS();
+
+                        video.play();
+                        callBack();
+                        startAndStop.innerText = '關閉攝像頭';
+
+                    })
+                }
+
                 video.onloadedmetadata = function(){
                     videoChangeOrientation();
                 }
-
-                isStartDetectCameraFPS();
-                isStartDetectLineFPS();
-
-                video.play();
-                callBack();
-                startAndStop.innerText = '關閉攝像頭';
 
             }).catch(function (err) {
                 console.log("An error occurred! " + err);
