@@ -238,8 +238,8 @@ $(document).ready(function() {
         }
     }
 
-    function onOrientationChange(e){
-        console.log('onOrientationChange e.orientation: ' + e.orientation);
+    function onOrientationChange(){
+        console.log('onOrientationChange window.orientation: ' + window.orientation);
 
         console.log('onOrientationChange window innerWidth: ' + window.innerWidth);
         console.log('onOrientationChange window innerHeight: ' + window.innerHeight);
@@ -282,7 +282,7 @@ $(document).ready(function() {
         }
     }
 
-    window.addEventListener('orientationchange', onOrientationChange, true);
+    window.addEventListener('orientationchange', onOrientationChange);
 
     function videoChangeOrientation(){
         if(video != null){
