@@ -262,8 +262,17 @@ $(document).ready(function() {
             console.log(' containerWidth: ' + containerWidth);
             console.log('containerHeight: ' + containerHeight);
 
-            console.log(' video.width: ' + video.width);
-            console.log('video.height: ' + video.height);
+            console.log('  video.getVideoTracks()[0].width: ' + video.srcObject.getVideoTracks()[0].width);
+            console.log(' video.getVideoTracks()[0].height: ' + video.srcObject.getVideoTracks()[0].height);
+
+            console.log(' video.getVideoTracks()[0].videoWidth: ' + video.srcObject.getVideoTracks()[0].videoWidth);
+            console.log(' video.getVideoTracks()[0].videoHeight: ' + video.srcObject.getVideoTracks()[0].videoHeight);
+
+            console.log(' video.getVideoTracks()[0].clientWidth: ' + video.srcObject.getVideoTracks()[0].clientWidth);
+            console.log(' video.getVideoTracks()[0].clientHeight: ' + video.srcObject.getVideoTracks()[0].clientHeight);
+
+            console.log(' video.clientWidth: ' + video.clientWidth);
+            console.log('video.clientHeight: ' + video.clientHeight);
 
             console.log(' video.videoWidth: ' + video.videoWidth);
             console.log('video.videoHeight: ' + video.videoHeight);
