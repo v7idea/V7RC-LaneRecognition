@@ -264,8 +264,6 @@ $(document).ready(function() {
                 })
             }
         }
-
-        videoChangeOrientation()
     }
 
     window.addEventListener('orientationchange', onOrientationChange);
@@ -324,7 +322,7 @@ $(document).ready(function() {
         if (isCameraOpen == false) {
 
             //{ video: true, audio: false }
-            navigator.mediaDevices.getUserMedia({ video: {  audio: false, video: true } }).then(function (stream) {
+            navigator.mediaDevices.getUserMedia({ video: {  aspectRatio: 4/3 } }).then(function (stream) {
                 isCameraOpen = true;
 
                 let tracks = stream.getVideoTracks();
