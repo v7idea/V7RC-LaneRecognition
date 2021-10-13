@@ -121,12 +121,6 @@ $(document).ready(function() {
     var video = document.getElementById('videoInput');
     var canvasOutput = document.getElementById('videoOutput');
     var canvasContext = canvasOutput.getContext('2d');
-
-    // ctx is the plotting canvas' context
-    // w is the width of the canvas
-    canvasContext.translate(canvasOutput.clientWidth, 0);
-    canvasContext.scale(-1, 1);
-
     var startAndStop = document.getElementById('startAndStop');
 
     var src = null;
