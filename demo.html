@@ -260,11 +260,11 @@ $(document).ready(function() {
             console.log(' video.offsetWidth: ' + video.offsetWidth);
             console.log('video.offsetHeight: ' + video.offsetHeight);
 
-            let settingWidth = video.getVideoTracks()[0].getSetting().width
-            let settingHeight = video.getVideoTracks()[0].getSetting().height
+            // let settingWidth = video.getVideoTracks()[0].getSetting().width
+            // let settingHeight = video.getVideoTracks()[0].getSetting().height
 
-            console.log(' settingWidth: ' + settingWidth);
-            console.log('settingHeight: ' + settingHeight);
+            // console.log(' settingWidth: ' + settingWidth);
+            // console.log('settingHeight: ' + settingHeight);
         }
 
         if(window.orientation == 90 || window.orientation == -90){
@@ -358,19 +358,27 @@ $(document).ready(function() {
                 console.log('Using stream device: ' + stream);
                 console.log('Using tracks device: ' + tracks);
 
-                video.srcObject = stream;
-                video.crossOrigin = "Anonymous";
+                let constraints = {
+                    aspectRatio: 4/3
+                };
 
                 video.onloadedmetadata = function(){
                     videoChangeOrientation();
                 }
 
-                isStartDetectCameraFPS();
-                isStartDetectLineFPS();
+                tracks[0].applyConstraints.apply(constraints).then(()=>{
 
-                video.play();
-                callBack();
-                startAndStop.innerText = '關閉攝像頭';
+                    video.srcObject = stream;
+                    video.crossOrigin = "Anonymous";
+
+                    isStartDetectCameraFPS();
+                    isStartDetectLineFPS();
+
+                    video.play();
+                    callBack();
+                    startAndStop.innerText = '關閉攝像頭';
+
+                })
 
             }).catch(function (err) {
                 console.log("An error occurred! " + err);
