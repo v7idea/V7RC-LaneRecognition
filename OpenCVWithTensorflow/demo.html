@@ -428,9 +428,11 @@
 
     function openDeviceCamera(callBack) {
         if (isCameraOpen == false) {
-            
-            navigator.mediaDevices.getUserMedia({ audio: false, video: true }).then(function (stream) {
-                isCameraOpen = true;
+
+            isCameraOpen = true;
+
+            //{ video: true, audio: false }
+            navigator.mediaDevices.getUserMedia({ video: { width: { exact: 320 }, height: { exact: 240 } } }).then(function (stream) {
 
                 let tracks = stream.getVideoTracks();
                 console.log('Using stream device: ' + stream);
@@ -448,10 +450,10 @@
 
                     video.play();
                     callBack();
-                    startAndStop.innerText = '關閉攝像頭';
-
+                    startAndStop.innerText = 'Stop';
+                    userCameraContainer();
                 })
-
+                
             }).catch(function (err) {
                 console.log("An error occurred! " + err);
                 alert(err);
