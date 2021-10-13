@@ -136,11 +136,11 @@
         <div style="display: table; margin-bottom: 10px;">
             <div style="float: left; width: 320px; height: 240px; margin: 10px; border: 5px solid #555;">
                 <video id="videoInput" style="-webkit-transform: scaleX(-1); transform: scaleX(-1);" width=320 height=240 onloadeddata="isStartPredict();" playsinline webkit-playsinline></video>
-                <canvas id="direct" width=320 height=240 style="-webkit-transform: scaleX(-1); transform: scaleX(-1);"></canvas>
+                <canvas id="direct" width=320 height=240></canvas>
             </div>
 
             <div id="vidoOutputContainer" style="float: left; width: 320px; height: 240px; margin: 10px; border: 5px solid #555;">
-                <canvas id="videoOutput"></canvas>
+                <canvas id="videoOutput" style="-webkit-transform: scaleX(-1); transform: scaleX(-1);"></canvas>
 
             </div>
         </div>
@@ -453,7 +453,7 @@
                     startAndStop.innerText = 'Stop';
                     userCameraContainer();
                 })
-                
+
             }).catch(function (err) {
                 console.log("An error occurred! " + err);
                 alert(err);
