@@ -366,7 +366,7 @@ $(document).ready(function() {
                     videoChangeOrientation();
                 }
 
-                tracks[0].applyConstraints.apply(constraints).then(()=>{
+                tracks[0].applyConstraints(constraints).then(()=>{
 
                     video.srcObject = stream;
                     video.crossOrigin = "Anonymous";
