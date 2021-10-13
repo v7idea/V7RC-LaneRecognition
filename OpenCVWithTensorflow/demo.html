@@ -135,8 +135,8 @@
 
         <div style="display: table; margin-bottom: 10px;">
             <div style="float: left; width: 320px; height: 240px; margin: 10px; border: 5px solid #555;">
-                <video id="videoInput" width=320 height=240 onloadeddata="isStartPredict();" playsinline webkit-playsinline></video>
-                <canvas id="direct" width=320 height=240></canvas>
+                <video id="videoInput" style="-webkit-transform: scaleX(-1); transform: scaleX(-1);" width=320 height=240 onloadeddata="isStartPredict();" playsinline webkit-playsinline></video>
+                <canvas id="direct" width=320 height=240 style="-webkit-transform: scaleX(-1); transform: scaleX(-1);"></canvas>
             </div>
 
             <div id="vidoOutputContainer" style="float: left; width: 320px; height: 240px; margin: 10px; border: 5px solid #555;">
@@ -327,6 +327,64 @@
         //document.getElementById("test").style.display="none";//隱藏 等於java的gone
     }
 
+    function onOrientationChange(){
+        // console.log('onOrientationChange window.orientation: ' + window.orientation);
+
+        // console.log('onOrientationChange window innerWidth: ' + window.innerWidth);
+        // console.log('onOrientationChange window innerHeight: ' + window.innerHeight);
+        
+        // console.log('onOrientationChange  document.documentElement.clientWidth: ' + document.documentElement.clientWidth);
+        // console.log('onOrientationChange document.documentElement.clientHeight: ' + document.documentElement.clientHeight);
+
+        // console.log('onOrientationChange  window.screen.width: ' + window.screen.width);
+        // console.log('onOrientationChange window.screen.height: ' + window.screen.height);
+
+        // console.log('onOrientationChange  screen.width: ' + document.body.clientWidth);
+        // console.log('onOrientationChange  screen.height: ' + document.body.clientHeight);
+
+        if(video != null && video.srcObject != null){
+            console.log(' video.videoWidth: ' + video.videoWidth);
+            console.log('video.videoHeight: ' + video.videoHeight);
+            
+            console.log(' video.offsetWidth: ' + video.offsetWidth);
+            console.log('video.offsetHeight: ' + video.offsetHeight);
+
+            // let settingWidth = video.getVideoTracks()[0].getSetting().width
+            // let settingHeight = video.getVideoTracks()[0].getSetting().height
+
+            // console.log(' settingWidth: ' + settingWidth);
+            // console.log('settingHeight: ' + settingHeight);
+
+            let constraints = getConstraintsByWindow()
+
+            video.srcObject.getVideoTracks()[0].applyConstraints(constraints).then(()=>{
+                console.log('onOrientationChange landScape  video.videoWidth: ' + video.videoWidth);
+                console.log('onOrientationChange landScape video.videoHeight: ' + video.videoHeight);
+            });
+        }
+    }
+
+    function getConstraintsByWindow(){
+        if(window.orientation == 90 || window.orientation == -90){
+            // landScape
+            let constraints = {
+                aspectRatio: 4/3
+            };
+
+            return constraints
+
+        }else{
+            // portrait 
+            let constraints = {
+                aspectRatio: 3/4
+            };
+
+            return constraints
+        }
+    }
+
+    window.addEventListener('orientationchange', onOrientationChange);
+
     function userCameraContainer() {
         document.getElementById("CameraContainer").style.visibility = "visible";
         document.getElementById("ImgContainer").style.visibility = "hidden";
@@ -370,73 +428,30 @@
 
     function openDeviceCamera(callBack) {
         if (isCameraOpen == false) {
-
-            isCameraOpen = true;
-
-            //{ video: true, audio: false }
-            navigator.mediaDevices.getUserMedia({ video: { width: { exact: 320 }, height: { exact: 240 } } }).then(function (stream) {
+            
+            navigator.mediaDevices.getUserMedia({ audio: false, video: true }).then(function (stream) {
+                isCameraOpen = true;
 
                 let tracks = stream.getVideoTracks();
                 console.log('Using stream device: ' + stream);
                 console.log('Using tracks device: ' + tracks);
 
-                video.srcObject = stream;
-                video.crossOrigin = "Anonymous";
-                
-                video.onloadedmetadata = function(){
-                    let vidoOutputContainer = document.getElementById('vidoOutputContainer')
+                let constraints = getConstraintsByWindow()
 
-                    let containerWidth = vidoOutputContainer.clientWidth
-                    let containerHeight = vidoOutputContainer.clientHeight
+                tracks[0].applyConstraints(constraints).then(()=>{
 
-                    console.log(' containerWidth: ' + containerWidth);
-                    console.log('containerHeight: ' + containerHeight);
+                    video.srcObject = stream;
+                    video.crossOrigin = "Anonymous";
 
-                    console.log(' video.videoWidth: ' + video.videoWidth);
-                    console.log('video.videoHeight: ' + video.videoHeight);
+                    isStartDetectCameraFPS();
+                    isStartDetectLineFPS();
 
-                    let ratioW = containerWidth / video.videoWidth
-                    let ratioH = containerHeight / video.videoHeight
-                    let aceptRatio = 1
+                    video.play();
+                    callBack();
+                    startAndStop.innerText = '關閉攝像頭';
 
-                    if(ratioW < ratioH){
-                        aceptRatio = ratioW
-                    }else{
-                        aceptRatio = ratioH
-                    }
+                })
 
-                    console.log('    ratioW: ' + ratioW);
-                    console.log('    ratioH: ' + ratioH);
-                    console.log('aceptRatio: ' + aceptRatio);
-
-                    let videoWidth = video.videoWidth * aceptRatio;
-                    let videoHeight = video.videoHeight * aceptRatio;
-
-                    console.log(' videoWidth: ' + videoWidth);
-                    console.log('videoHeight: ' + videoHeight);
-
-                    let topAndBottom = (containerHeight - videoHeight) / 2
-                    let leftAndRight = (containerWidth - videoWidth) / 2
-
-                    console.log('topAndBottom: ' + topAndBottom);
-                    console.log('leftAndRight: ' + leftAndRight);
-
-                    canvasOutput.style.width = videoWidth + 'px';
-                    canvasOutput.style.height = videoHeight + 'px';
-
-                    canvasOutput.style.marginTop = topAndBottom + 'px';
-                    canvasOutput.style.marginBottom = topAndBottom + 'px';
-                    canvasOutput.style.marginLeft = leftAndRight + 'px';
-                    canvasOutput.style.marginRight = leftAndRight + 'px';
-                }
-
-                isStartDetectCameraFPS();
-                isStartDetectLineFPS();
-
-                video.play();
-                callBack();
-                startAndStop.innerText = 'Stop';
-                userCameraContainer();
             }).catch(function (err) {
                 console.log("An error occurred! " + err);
                 alert(err);
