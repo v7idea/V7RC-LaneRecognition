@@ -269,39 +269,13 @@ $(document).ready(function() {
 
             // console.log(' settingWidth: ' + settingWidth);
             // console.log('settingHeight: ' + settingHeight);
-        }
 
-        let constraints = getConstraintsByWindow()
+            let constraints = getConstraintsByWindow()
 
-        video.srcObject.getVideoTracks()[0].applyConstraints(constraints).then(()=>{
-            console.log('onOrientationChange landScape  video.videoWidth: ' + video.videoWidth);
-            console.log('onOrientationChange landScape video.videoHeight: ' + video.videoHeight);
-        });
-
-        if(window.orientation == 90 || window.orientation == -90){
-            // landScape
-            if(video != null && video.srcObject != null){
-                let constraints = {
-                    aspectRatio: 3/4
-                };
-
-                video.srcObject.getVideoTracks()[0].applyConstraints(constraints).then(()=>{
-                    console.log('onOrientationChange landScape  video.videoWidth: ' + video.videoWidth);
-                    console.log('onOrientationChange landScape video.videoHeight: ' + video.videoHeight);
-                });
-            }
-        }else{
-            // portrait
-            if(video != null && video.srcObject != null){
-                let constraints = {
-                    aspectRatio: 4/3
-                };
-
-                video.srcObject.getVideoTracks()[0].applyConstraints(constraints).then(()=>{
-                    console.log('onOrientationChange portrait  video.videoWidth: ' + video.videoWidth);
-                    console.log('onOrientationChange portrait video.videoHeight: ' + video.videoHeight);
-                })
-            }
+            video.srcObject.getVideoTracks()[0].applyConstraints(constraints).then(()=>{
+                console.log('onOrientationChange landScape  video.videoWidth: ' + video.videoWidth);
+                console.log('onOrientationChange landScape video.videoHeight: ' + video.videoHeight);
+            });
         }
     }
 
@@ -326,55 +300,6 @@ $(document).ready(function() {
 
     window.addEventListener('orientationchange', onOrientationChange);
 
-    // function videoChangeOrientation(){
-    //     if(video != null){
-    //         let vidoOutputContainer = document.getElementById('vidoOutputContainer')
-
-    //         let containerWidth = vidoOutputContainer.clientWidth
-    //         let containerHeight = vidoOutputContainer.clientHeight
-
-    //         console.log(' containerWidth: ' + containerWidth);
-    //         console.log('containerHeight: ' + containerHeight);
-
-    //         console.log(' video.videoWidth: ' + video.videoWidth);
-    //         console.log('video.videoHeight: ' + video.videoHeight);
-
-    //         let ratioW = containerWidth / video.videoWidth
-    //         let ratioH = containerHeight / video.videoHeight
-    //         let aceptRatio = 1
-
-    //         if(ratioW < ratioH){
-    //             aceptRatio = ratioW
-    //         }else{
-    //             aceptRatio = ratioH
-    //         }
-
-    //         console.log('    ratioW: ' + ratioW);
-    //         console.log('    ratioH: ' + ratioH);
-    //         console.log('aceptRatio: ' + aceptRatio);
-
-    //         let videoWidth = video.videoWidth * aceptRatio;
-    //         let videoHeight = video.videoHeight * aceptRatio;
-
-    //         console.log(' videoWidth: ' + videoWidth);
-    //         console.log('videoHeight: ' + videoHeight);
-
-    //         let topAndBottom = (containerHeight - videoHeight) / 2
-    //         let leftAndRight = (containerWidth - videoWidth) / 2
-
-    //         console.log('topAndBottom: ' + topAndBottom);
-    //         console.log('leftAndRight: ' + leftAndRight);
-
-    //         canvasOutput.style.width = videoWidth + 'px';
-    //         canvasOutput.style.height = videoHeight + 'px';
-
-    //         canvasOutput.style.marginTop = topAndBottom + 'px';
-    //         canvasOutput.style.marginBottom = topAndBottom + 'px';
-    //         canvasOutput.style.marginLeft = leftAndRight + 'px';
-    //         canvasOutput.style.marginRight = leftAndRight + 'px';
-    //     }
-    // }
-
     function openDeviceCamera(callBack) {
         if (isCameraOpen == false) {
 
@@ -387,10 +312,6 @@ $(document).ready(function() {
                 console.log('Using tracks device: ' + tracks);
 
                 let constraints = getConstraintsByWindow()
-
-                // video.onloadedmetadata = function(){
-                //     videoChangeOrientation();
-                // }
 
                 tracks[0].applyConstraints(constraints).then(()=>{
 
