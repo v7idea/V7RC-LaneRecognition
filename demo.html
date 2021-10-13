@@ -124,8 +124,8 @@ $(document).ready(function() {
 
     // ctx is the plotting canvas' context
     // w is the width of the canvas
-    canvasOutput.translate(canvasOutput.clientWidth, 0);
-    canvasOutput.scale(-1, 1);
+    canvasContext.translate(canvasOutput.clientWidth, 0);
+    canvasContext.scale(-1, 1);
 
     var startAndStop = document.getElementById('startAndStop');
 
