@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=yes, initial-scale=1, maximum-scale=1">
+    <title>OpenCV NodeJS Demo</title>
+</head>
+
+<style>
+    .boxes-container {
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 100%;
+        position: relative;
+    }
+</style>
+
+
+
+<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+<script async src="https://cdn.jsdelivr.net/npm/@tensorflow-models/tasks" onload="onTensorflowTasksReady();"
+    type="text/javascript"></script>
+
+<!-- <script async src="opencv.js" onload="onOpenCvReady();" type="text/javascript"></script> -->
+<script src="https://intel.github.io/webml-polyfill/dist/webml-polyfill.js"></script>
+<!-- <script src='util/base.js'></script>
+<script src='util/modelZoo.js'></script>
+<script src='util/BaseRunner.js'></script>
+<script src='util/WebNNRunner.js'></script>
+<script src='util/OpenCVRunner.js'></script>
+<script src='util/BaseExample.js'></script>
+<script src='util/BaseApp.js'></script> -->
+<!-- <script src='util/BaseCameraExample.js'></script> -->
+<script async src="util/openvino/openvino.js"  type="text/javascript"></script>
+<script async src="util/openvino/OpenVINOModelImporter.js"   type="text/javascript"></script>
+<script async src="util/openvino/OpenVINOModel.js"   type="text/javascript"></script>
+<script async src="util/openvino/OpenVINOModelUtils.js"   type="text/javascript"></script>
+<!-- <script src='ImageClassificationExample.js'></script>
+<script src='main.js'></script> -->
+<body>
+    <div> 
+        <div id="ImgContainer">
+            Url:
+            <input type="text" id="input_Img_Url" value="http://192.168.0.166:8080/?action=stream">
+
+            <button id="startAndStop_img" onclick="ImageTrigger()">Start</button>
+        </div>
+
+        <div id="CameraContainer" style="margin-top: 20px;">
+            Camera:
+            <button id="startAndStop" onclick="cameraTrigger()">Start</button>
+        </div>
+
+        <div style="display: table; margin-bottom: 10px;">
+            <div style="float: left; width: 320px; height: 240px; margin: 10px; border: 5px solid #555;">
+                <video id="videoInput" style="-webkit-transform: scaleX(-1); transform: scaleX(-1);" width=320 height=240 onloadeddata="isStartPredict();" playsinline webkit-playsinline></video>
+                <canvas id="direct" width=320 height=240></canvas>
+            </div>
+
+            <div id="vidoOutputContainer" style="float: left; width: 320px; height: 240px; margin: 10px; border: 5px solid #555;">
+                <canvas id="videoOutput" style="-webkit-transform: scaleX(-1); transform: scaleX(-1);"></canvas>
+
+            </div>
+        </div>
+
+        <div style="margin-bottom: 10px;">
+            <p id="cameraFPS">cameraFPS：</p>
+            <p id="detectLineFPS">detectLineFPS：</p>
+            <p id="detectLineTime">detectLineProcessTime(ms)：</p>
+        </div>
+
+        leftUpX:
+        <input type="number" min="0" id="input_leftUpX">
+        leftUpY:
+        <input type="number" min="0" id="input_leftUpY">
+        <br>
+        rightUpX:
+        <input type="number" min="0" id="input_rightUpX">
+        rightUpY:
+        <input type="number" min="0" id="input_rightUpY">
+        <br>
+        rightDownX:
+        <input type="number" min="0" id="input_rightDownX">
+        rightDownY:
+        <input type="number" min="0" id="input_rightDownY">
+        <br>
+        leftDownX:
+        <input type="number" min="0" id="input_leftDownX">
+        leftDownY:
+        <input type="number" min="0" id="input_leftDownY">
+        <br>
+        <button onclick=ChangeValue()>ChangeValue</button>
+
+    </div>
+</body>
+
+<script type="text/javascript">
+
+    var _progressHandler = null;
+    var _currentRequest = null;
+
+  /**
+   * This method is to do loading resource with specified url.
+   * @param {string} url A string for url, such as model file url, label file url, etc..
+   * @param {function(!ProcessEvent): undefined} handler
+   * @param {boolean=} isBinary A boolean that for setting response type
+   * @returns {!Promise}
+   */
+  async function loadURL(url, handler = null, isBinary = false) {
+        
+        let _this = this;
+
+        return new Promise((resolve, reject) => {
+        if (_currentRequest != null) {
+            _currentRequest.abort();
+        }
+        let oReq = new XMLHttpRequest();
+        _currentRequest = oReq;
+        oReq.open('GET', url, true);
+        if (isBinary) {
+            oReq.responseType = 'arraybuffer';
+        }
+        oReq.onload = function (ev) {
+            _currentRequest = null;
+            if (oReq.readyState === 4) {
+            if (oReq.status === 200) {
+                resolve(oReq.response);
+            } else {
+                reject(new Error(`Failed to load ${url} . Status: [${oReq.status}]`));
+            }
+            }
+        };
+        if (handler != null) {
+            oReq.onprogress = handler;
+        }
+        oReq.send();
+        });
+    }
+
+    async function startOpenVino() {
+        
+        var url = "model/deeplab_mobilenetv2_224_dilated.bin";
+        var my_openVino = null;
+        let rawModel = null;
+        const arrayBuffer = await loadURL(url, _progressHandler, true);
+        const bytes = new Uint8Array(arrayBuffer);
+
+        const networkFile = url.replace(/bin$/, 'xml');
+        const networkText = await loadURL(networkFile);
+        const weightsBuffer = bytes.buffer;
+
+        if(rawModel == null) {
+
+            console.log('Inital OpenVINO');
+
+            rawModel = new OpenVINOModel(networkText, weightsBuffer);
+            rawModel._rawFormat = 'OPENVINO';
+
+            console.log('OpenVINO is Ready.');
+
+        } else {
+
+            alert('can\'t find OpenVino Model');
+
+        }
+    
+        
+    }
+    
+    startOpenVino();
+
+
+</script>
+
+</html>
