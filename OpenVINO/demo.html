@@ -20,8 +20,8 @@
 
 
 <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
-<script async src="https://cdn.jsdelivr.net/npm/@tensorflow-models/tasks" onload="onTensorflowTasksReady();"
-    type="text/javascript"></script>
+<!-- <script async src="https://cdn.jsdelivr.net/npm/@tensorflow-models/tasks" onload="onTensorflowTasksReady();"
+    type="text/javascript"></script> -->
 
 <!-- <script async src="opencv.js" onload="onOpenCvReady();" type="text/javascript"></script> -->
 <script src="https://intel.github.io/webml-polyfill/dist/webml-polyfill.js"></script>
@@ -155,10 +155,29 @@
 
             console.log('Inital OpenVINO');
 
-            rawModel = new OpenVINOModel(networkText, weightsBuffer);
+            rawModel = await new OpenVINOModel(networkText, weightsBuffer);
             rawModel._rawFormat = 'OPENVINO';
+            console.log('OpenVINO is Ready.'); 
 
-            console.log('OpenVINO is Ready.');
+            let network = rawModel.network;
+
+            console.log(network); 
+            console.log(rawModel.graphics);
+            console.log(rawModel.weights);
+
+            if(typeof(network.predict) != 'undefined') {
+                alert('有預期中的功能：rawModel.predict');
+            } else {
+                alert('沒有預期中的功能：rawModel.predict');
+            }
+
+
+            if(typeof(network.infer) != 'undefined') {
+                alert('有預期中的功能：rawModel.infer');
+            }else {
+                alert('沒有預期中的功能：rawModel.infer');
+            }
+
 
         } else {
 
