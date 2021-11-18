@@ -159,9 +159,9 @@
 
             const labels = await loadLables(labelsUrl);
             const input = getBlobFromImage(inputSize, mean, std, swapRB, 'canvasInput');
-            // let net = cv.readNet(configPath, modelPath);
-            cv.setInferenceEngineBackendType('DNN_BACKEND_INFERENCE_ENGINE');
-            let net = cv.readNetFromModelOptimizer(configPath, modelPath);
+            let net = cv.readNet(configPath, modelPath);
+            // cv.setInferenceEngineBackendType('DNN_BACKEND_INFERENCE_ENGINE');
+            // let net = cv.readNetFromModelOptimizer(configPath, modelPath);
             // let net = cv.readNetFromONNX(modelPath);
             net.setInput(input);
             const start = performance.now();
