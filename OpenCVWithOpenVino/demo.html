@@ -24,6 +24,17 @@
     </div>
     <div style="clear:both;"></div>
     <div id="errorMessage"></div>
+    <div id="result">
+        <div id="label0" style="position: relative; float: left;"></div>
+        <div id="prob0" style="position: relative; float: left;"></div>
+        <div style="clear: both;"></div>
+        <div id="label1" style="position: relative; float: left;"></div>
+        <div id="prob1" style="position: relative; float: left;"></div>
+        <div style="clear: both;"></div>
+        <div id="label2" style="position: relative; float: left;"></div>
+        <div id="prob2" style="position: relative; float: left;"></div>
+        <div style="clear: both;"></div>
+    </div>
     <div>
         <table cellpadding="0" cellspacing="0" width="0">
             <tr>
@@ -124,10 +135,17 @@
         
         }
 
-        let inputSize = [300, 300];
-        let mean = [127.5, 127.5, 127.5];
-        let std = 0.007843;
+        // let inputSize = [300, 300];
+        // let mean = [127.5, 127.5, 127.5];
+        // let std = 0.007843;
+        // let swapRB = false;
+        let inputSize = [224,224];
+        let mean = [104, 117, 123];
+        let std = 1;
         let swapRB = false;
+
+        // record if need softmax function for post-processing
+        let needSoftmax = false;
         let confThreshold = 0.5;
         let nmsThreshold = 0.4;
 
@@ -137,44 +155,73 @@
         // url for label file, can from local or Internet
         labelsUrl = "object_detection_classes_pascal_voc.txt";
 
-        let main = async function() {
-
-            if(typeof(cv.readNetFromModelOptimizer) != 'undefined' ) {
-                // alert(typeof(cv.readNetFromModelOptimizer));
-            } else {
-                alert('readNetFromModelOptimizer is undefined');
-            }
-
-            if(typeof(cv.readNetFromCaffe) != 'undefined' ) {
-                // alert(typeof(cv.readNetFromCaffe));
-            } else {
-                alert('readNetFromCaffe is undefined');
-            }
-
-            if(typeof(cv.readNetFromTensorflow) != 'undefined' ) {
-                // alert(typeof(cv.readNetFromTensorflow));
-            } else {
-                alert('readNetFromTensorflow is undefined');
-            }
-
+        main = async function() {
             const labels = await loadLables(labelsUrl);
             const input = getBlobFromImage(inputSize, mean, std, swapRB, 'canvasInput');
             let net = cv.readNet(configPath, modelPath);
-            // cv.setInferenceEngineBackendType('DNN_BACKEND_INFERENCE_ENGINE');
-            // let net = cv.readNetFromModelOptimizer(configPath, modelPath);
-            // let net = cv.readNetFromONNX(modelPath);
             net.setInput(input);
             const start = performance.now();
             const result = net.forward();
             const time  = performance.now()-start;
-            const output = postProcess(result, labels);
-
-            updateResult(output, time);
+            const probs = softmax(result);
+            const classes = getTopClasses(probs, labels);
+            alert(classes);
+            updateResult(classes, time);
             input.delete();
             net.delete();
             result.delete();
+        }
 
-        };
+        // let main = async function() {
+        //     if(typeof(cv.readNetFromModelOptimizer) != 'undefined' ) {
+        //         // alert(typeof(cv.readNetFromModelOptimizer));
+        //     } else {
+        //         alert('readNetFromModelOptimizer is undefined');
+        //     }
+
+        //     if(typeof(cv.readNetFromCaffe) != 'undefined' ) {
+        //         // alert(typeof(cv.readNetFromCaffe));
+        //     } else {
+        //         alert('readNetFromCaffe is undefined');
+        //     }
+
+        //     if(typeof(cv.readNetFromTensorflow) != 'undefined' ) {
+        //         // alert(typeof(cv.readNetFromTensorflow));
+        //     } else {
+        //         alert('readNetFromTensorflow is undefined');
+        //     }
+
+        //     const labels = await loadLables(labelsUrl);
+        //     const input = getBlobFromImage(inputSize, mean, std, swapRB, 'canvasInput');
+            
+        //     // try {
+        //         let net = cv.readNet(configPath, modelPath);
+        //         // let net = cv.readNetFromModelOptimizer(configPath, modelPath);
+        //         // let net = cv.readNetFromONNX(modelPath);
+        //         net.setInput(input);
+        //         const start = performance.now();
+        //         const result = net.forward();
+
+        //         console.log(result);
+        //         const time  = performance.now()-start;
+        //         const output = postProcess(result, labels);
+
+        //         updateResult(output, time);
+        //         input.delete();
+        //         net.delete();
+        //         result.delete();
+        //     //} catch(e) {
+        //     //    console.error(e);
+        //     //}
+            
+        //     input.delete();
+        //     // cv.setInferenceEngineBackendType('DNN_BACKEND_INFERENCE_ENGINE');
+        //     // let net = await cv.readNetFromModelOptimizer(configPath, modelPath);
+        //     // let net = cv.readNetFromONNX(modelPath);
+            
+            
+
+        // };
 
         let loadLables = async function (labelsUrl) {
             let response = await fetch(labelsUrl);
@@ -225,6 +272,41 @@
                 }
             });
         };
+
+        let loadModel_model = async function (e) {
+            return new Promise((resolve) => {
+                let file = e.target.files[0];
+                let path = file.name;
+                let reader = new FileReader();
+                reader.readAsArrayBuffer(file);
+                reader.onload = function(ev) {
+                    if (reader.readyState === 2) {
+                        let buffer = reader.result;
+                        let data = new Uint8Array(buffer);
+                        cv.FS_createDataFile('/', path, data, true, false, false);
+                        resolve(data);
+                    }
+                }
+            });
+        };
+
+        let loadModel_config = async function (e) {
+            return new Promise((resolve) => {
+                let file = e.target.files[0];
+                let path = file.name;
+                let reader = new FileReader();
+                reader.readAsArrayBuffer(file);
+                reader.onload = function(ev) {
+                    if (reader.readyState === 2) {
+                        let buffer = reader.result;
+                        let data = new Uint8Array(buffer);
+                        cv.FS_createDataFile('/', path, data, true, false, false);
+                        resolve(data);
+                    }
+                }
+            });
+        };
+
 
         let postProcess = function(result, labels) {
             let canvasOutput = document.getElementById('canvasOutput');
@@ -393,6 +475,41 @@
                                     new cv.Scalar(0, 0, 0));
         }
 
+        softmax = function(result) {
+            let arr = result.data32F;
+            if (needSoftmax) {
+                const maxNum = Math.max(...arr);
+                const expSum = arr.map((num) => Math.exp(num - maxNum)).reduce((a, b) => a + b);
+                return arr.map((value, index) => {
+                    return Math.exp(value - maxNum) / expSum;
+                });
+            } else {
+                return arr;
+            }
+        }
+
+
+        getTopClasses = function (probs, labels, topK = 3) {
+            probs = Array.from(probs);
+            let indexes = probs.map((prob, index) => [prob, index]);
+            let sorted = indexes.sort((a, b) => {
+                if (a[0] === b[0]) {return 0;}
+                return a[0] < b[0] ? -1 : 1;
+            });
+            sorted.reverse();
+            let classes = [];
+            for (let i = 0; i < topK; ++i) {
+                let prob = sorted[i][0];
+                let index = sorted[i][1];
+                let c = {
+                    label: labels[index],
+                    prob: (prob * 100).toFixed(2)
+                }
+                classes.push(c);
+            }
+            return classes;
+        }
+
         let tryIt = document.getElementById('tryIt');
         tryIt.addEventListener('click', () => {
             initStatus();
@@ -427,7 +544,7 @@
         modelFile.addEventListener('change', async (e) => {
             initStatus();
             modelPath = await loadModel(e);
-            // alert(modelPath);
+            //alert(modelPath);
             document.getElementById('status').innerHTML = `The model file '${modelPath}' is created successfully.`;
             configPath = "";
             configFile.value = "";
@@ -442,7 +559,7 @@
             if(typeof(cv.setInferenceEngineBackendType ) != 'undefined' ) {
                 alert("setInferenceEngineBackendType  is ready!");
             } else {
-                alert('setInferenceEngineBackendType  is undefined');
+                // alert('setInferenceEngineBackendType  is undefined');
             }
 
             if(typeof(cv.getInferenceEngineBackendType) != 'undefined' ) {
@@ -458,7 +575,7 @@
                 // }
                 
             } else {
-                alert('getInferenceEngineBackendType()  is undefined');
+                // alert('getInferenceEngineBackendType()  is undefined');
             }
 
             if(typeof(cv.getInferenceEngineVPUType) != 'undefined' ) {
@@ -469,7 +586,7 @@
 
                 
             } else {
-                alert('getInferenceEngineVPUType()  is undefined');
+                // alert('getInferenceEngineVPUType()  is undefined');
             }
 
             if(typeof(cv.getAvailableBackends) != 'undefined' ) {
@@ -477,23 +594,42 @@
                 //     alert("getAvailableBackends()  is ready! value:" + result);
                 // });
             } else {
-                alert('getAvailableBackends()  is undefined');
+                // alert('getAvailableBackends()  is undefined');
             }
 
 
         });
 
-        function updateResult(output, time) {
-            try{
-                let canvasOutput = document.getElementById('canvasOutput');
-                canvasOutput.style.visibility = "visible";
-                cv.imshow('canvasOutput', output);
-                document.getElementById('status').innerHTML = `<b>Model:</b> ${modelPath}<br>
-                                                            <b>Inference time:</b> ${time.toFixed(2)} ms`;
-            } catch(e) {
-                console.log(e);
-            }
+        // function updateResult(output, time) {
+        //     try{
+        //         let canvasOutput = document.getElementById('canvasOutput');
+        //         canvasOutput.style.visibility = "visible";
+        //         cv.imshow('canvasOutput', output);
+        //         document.getElementById('status').innerHTML = `<b>Model:</b> ${modelPath}<br>
+        //                                                     <b>Inference time:</b> ${time.toFixed(2)} ms`;
+        //     } catch(e) {
+        //         console.log(e);
+        //     }
+        // }
+
+        function updateResult(classes, time) {
+        try{
+            classes.forEach((c,i) => {
+                let labelElement = document.getElementById('label'+i);
+                let probElement = document.getElementById('prob'+i);
+                labelElement.innerHTML = c.label;
+                probElement.innerHTML = c.prob + '%';
+            });
+            let result = document.getElementById('result');
+            result.style.visibility = 'visible';
+            document.getElementById('status').innerHTML = `<b>Model:</b> ${modelPath}<br>
+                                                         <b>Inference time:</b> ${time.toFixed(2)} ms`;
+        } catch(e) {
+            console.log(e);
         }
+    }
+
+
 
         function initStatus() {
             document.getElementById('status').innerHTML = '';
