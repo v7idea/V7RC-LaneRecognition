@@ -156,9 +156,14 @@
         labelsUrl = "object_detection_classes_pascal_voc.txt";
 
         main = async function() {
+
+            // if(typeof(cv.setPreferableBackend) != 'undefined') {
+            //     alert("cv.setPreferableBackend is active");
+            // }
+
             const labels = await loadLables(labelsUrl);
             const input = getBlobFromImage(inputSize, mean, std, swapRB, 'canvasInput');
-            let net = cv.readNet(configPath, modelPath);
+            let net = cv.readNetFromModelOptimizer(configPath, modelPath);
             net.setInput(input);
             const start = performance.now();
             const result = net.forward();
@@ -170,6 +175,8 @@
             input.delete();
             net.delete();
             result.delete();
+
+
         }
 
         // let main = async function() {
