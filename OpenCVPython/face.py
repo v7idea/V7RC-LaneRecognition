@@ -5,7 +5,7 @@ import cv2 as cv
 net = cv.dnn.readNet('./models/face-detection-adas-0001/FP16/face-detection-adas-0001.xml',
                      './models/face-detection-adas-0001/FP16/face-detection-adas-0001.bin')
 # Specify target device
-net.setPreferableBackend(cv2.dnn.DNN_BACKEND_INFERENCE_ENGINE) #設定後端平台為intel inference engine
+net.setPreferableBackend(cv.dnn.DNN_BACKEND_INFERENCE_ENGINE) #設定後端平台為intel inference engine
 net.setPreferableTarget(cv.dnn.DNN_TARGET_CPU)
 # Read an image - used an extracted image the open source video: face-detection for this example
 frame = cv.imread('./face-1.jpg')
