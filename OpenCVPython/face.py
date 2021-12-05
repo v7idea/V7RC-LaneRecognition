@@ -2,8 +2,8 @@ import datetime
 import time
 import cv2 as cv
 # Load the model.
-net = cv.dnn.readNet('./models/FP32/face-detection-adas-0001/FP16/face-detection-adas-0001.xml',
-                     './models/FP32/face-detection-adas-0001/FP16/face-detection-adas-0001.bin')
+net = cv.dnn.readNet('./models/face-detection-adas-0001/FP16/face-detection-adas-0001.xml',
+                     './models/face-detection-adas-0001/FP16/face-detection-adas-0001.bin')
 # Specify target device
 net.setPreferableTarget(cv.dnn.DNN_TARGET_CPU)
 # Read an image - used an extracted image the open source video: face-detection for this example
