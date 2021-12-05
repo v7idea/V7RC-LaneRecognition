@@ -2,10 +2,10 @@ import datetime
 import time
 import cv2 as cv
 # Load the model.
-net = cv.dnn.readNet('face-detection-adas-0001.xml',
-                     'face-detection-adas-0001.bin')
+net = cv.dnn.readNet('face-detection-retail-0005.xml',
+                     'face-detection-retail-0005.bin')
 # Specify target device
-net.setPreferableTarget(cv.dnn.DNN_TARGET_MYRIAD)
+net.setPreferableTarget(cv.dnn.DNN_TARGET_CPU)
 # Read an image - used an extracted image the open source video: face-detection for this example
 frame = cv.imread('face-1.jpg')
 if frame is None:
