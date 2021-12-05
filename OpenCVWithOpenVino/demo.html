@@ -163,8 +163,10 @@
 
             const labels = await loadLables(labelsUrl);
             const input = getBlobFromImage(inputSize, mean, std, swapRB, 'canvasInput');
-            let net = cv.readNetFromModelOptimizer(configPath, modelPath);
+            // let net = cv.readNetFromModelOptimizer(configPath, modelPath);
+            let net = cv.readNet(configPath, modelPath);
             net.setInput(input);
+            console.log("setInput ok!");
             const start = performance.now();
             const result = net.forward();
             const time  = performance.now()-start;
