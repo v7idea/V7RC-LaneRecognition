@@ -29,4 +29,4 @@ date_string = time.strftime("%Y-%m-%d-%H:%M:%S")
 # create imageName variable that takes adds the date_string to the output file name
 imageName = 'test' + date_string +'.png'
 # output with name and frame
-cv.imwrite( imageName, frame );
+cv.imwrite( imageName, frame )
